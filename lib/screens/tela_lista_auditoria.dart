@@ -1,3 +1,4 @@
+import 'package:audi_mag/screens/tela_visualizar_auditoria.dart';
 import 'package:flutter/material.dart';
 import 'package:audi_mag/db_helper.dart';
 
@@ -37,6 +38,13 @@ class _TelaListaAuditoriasState extends State<TelaListaAuditorias> {
             title: Text(auditoria['nome']),
             onTap: () {
               // Navegar para a tela de visualização/edição da auditoria
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => TelaVisualizarAuditoria(
+                        auditoriaId: auditoria['id'],
+                        nomeAuditoria: auditoria['nome'])),
+              );
             },
             trailing: IconButton(
               icon: Icon(Icons.delete),

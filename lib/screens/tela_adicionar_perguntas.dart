@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:audi_mag/db_helper.dart';
 
@@ -14,6 +16,18 @@ class _TelaAdicionarPerguntasState extends State<TelaAdicionarPerguntas> {
   final List<Map<String, dynamic>> _perguntas = [];
   String novaPergunta = '';
   String observacao = '';
+  File? imagemSelecionada;
+
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _selecionarImagem() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        imagemSelecionada = File(pickedFile.path);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,21 +52,35 @@ class _TelaAdicionarPerguntasState extends State<TelaAdicionarPerguntas> {
                 observacao = value;
               },
             ),
+            SizedBox(height: 10),
+            imagemSelecionada != null
+                ? Image.file(imagemSelecionada!)
+                : Container(),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _selecionarImagem,
+              child: Text('Anexar Imagem'),
+            ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
                 if (novaPergunta.isNotEmpty) {
                   await DBHelper().salvarPergunta(
-                      widget.auditoriaId, novaPergunta, observacao);
+                    widget.auditoriaId,
+                    novaPergunta,
+                    observacao,
+                    imagemSelecionada?.path, // Salvando o caminho da imagem
+                  );
                   setState(() {
                     _perguntas.add({
                       'pergunta': novaPergunta,
                       'observacao': observacao,
-                      'imagem': null, // Para imagem futura
+                      'imagem': imagemSelecionada?.path,
                       'resposta': null,
                     });
                     novaPergunta = '';
                     observacao = '';
+                    imagemSelecionada = null;
                   });
                 }
               },

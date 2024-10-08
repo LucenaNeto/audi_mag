@@ -46,14 +46,14 @@ class DBHelper {
     return await db.insert('auditorias', {'nome': nome});
   }
 
-  Future<int> salvarPergunta(
-      int auditoriaId, String pergunta, String observacao) async {
+  Future<int> salvarPergunta(int auditoriaId, String pergunta,
+      String observacao, String? imagem) async {
     final db = await database;
     return await db.insert('perguntas', {
       'auditoriaId': auditoriaId,
       'pergunta': pergunta,
       'observacao': observacao,
-      'imagem': null,
+      'imagem': imagem,
       'resposta': null
     });
   }
