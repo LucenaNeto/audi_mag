@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audi_mag/db_helper.dart';
 import 'dart:io';
+import 'package:audi_mag/screens/tela_exibir_imagem.dart';
 
 class TelaVisualizarAuditoria extends StatefulWidget {
   final int auditoriaId;
@@ -96,8 +97,23 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
                 Text(pergunta['observacao'] ?? ''),
                 SizedBox(height: 5),
                 pergunta['imagem'] != null
-                    ? Image.file(File(pergunta['imagem']),
-                        height: 100, fit: BoxFit.cover)
+                    ? GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TelaExibirImagem(
+                                caminhoImagem: pergunta['imagem'],
+                              ),
+                            ),
+                          );
+                        },
+                        child: Image.file(
+                          File(pergunta['imagem']),
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
+                      )
                     : Container(),
                 SizedBox(height: 10),
                 // botão sim ou não
