@@ -35,6 +35,16 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
     });
   }
 
+  Future<void> _salvarResposta(int perguntaId, String resposta) async {
+    final db = await DBHelper().database;
+    await db.update(
+      'perguntas',
+      {'resposta': resposta},
+      where: 'id = ?',
+      whereArgs: [perguntaId],
+    );
+  }
+
   Future<void> _excluirPergunta(int perguntaId) async {
     final db = await DBHelper().database;
     await db.delete(
@@ -43,6 +53,9 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
       whereArgs: [perguntaId],
     );
     _carregarPerguntas();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Pergunta excluída com sucesso')),
+    );
   }
 
   Future<void> _editarPergunta(
@@ -70,12 +83,52 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
         itemCount: _perguntas.length,
         itemBuilder: (context, index) {
           final pergunta = _perguntas[index];
+          String? resposta = pergunta['resposta'];
+
           return ListTile(
-            title: Text(pergunta['pergunta']),
-            subtitle: Text(pergunta['observacao'] ?? ''),
-            leading: pergunta['imagem'] != null
-                ? Image.file(File(pergunta['imagem']), width: 50, height: 50)
-                : null,
+            contentPadding:
+                EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+            title: Text(pergunta['pergunta'],
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(pergunta['observacao'] ?? ''),
+                SizedBox(height: 5),
+                pergunta['imagem'] != null
+                    ? Image.file(File(pergunta['imagem']),
+                        height: 100, fit: BoxFit.cover)
+                    : Container(),
+                SizedBox(height: 10),
+                // botão sim ou não
+                Column(
+                  children: [
+                    RadioListTile<String>(
+                      title: const Text('Sim'),
+                      value: 'Sim',
+                      groupValue: resposta,
+                      onChanged: (String? value) {
+                        setState(() {
+                          resposta = value;
+                        });
+                        _salvarResposta(pergunta['id'], value!);
+                      },
+                    ),
+                    RadioListTile<String>(
+                      title: const Text('Não'),
+                      value: 'Não',
+                      groupValue: resposta,
+                      onChanged: (String? value) {
+                        setState(() {
+                          resposta = value;
+                        });
+                        _salvarResposta(pergunta['id'], value!);
+                      },
+                    ),
+                  ],
+                )
+              ],
+            ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
