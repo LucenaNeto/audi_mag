@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:audi_mag/db_helper.dart';
+import 'package:audi_mag/screens/tela_exibir_imagem.dart';
 
 class TelaAdicionarPerguntas extends StatefulWidget {
   final int auditoriaId;
@@ -39,27 +40,48 @@ class _TelaAdicionarPerguntasState extends State<TelaAdicionarPerguntas> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextFormField(
-              decoration: InputDecoration(labelText: 'Pergunta'),
-              onChanged: (value) {
-                novaPergunta = value;
-              },
-            ),
-            SizedBox(height: 10),
-            TextFormField(
-              decoration: InputDecoration(labelText: 'Observação (opcional)'),
-              onChanged: (value) {
-                observacao = value;
-              },
-            ),
-            SizedBox(height: 10),
-            imagemSelecionada != null
-                ? Image.file(imagemSelecionada!)
-                : Container(),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _selecionarImagem,
-              child: Text('Anexar Imagem'),
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                      decoration: InputDecoration(labelText: 'Pergunta'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor, Insira a pergunta';
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        novaPergunta = value; // atualiza o valor da pergunta
+                      },
+                    ),
+                    SizedBox(height: 10),
+                    TextFormField(
+                      decoration:
+                          InputDecoration(labelText: 'Observação (opcional)'),
+                      onChanged: (value) {
+                        observacao = value; // atualiza o valor da observação
+                      },
+                    ),
+                    SizedBox(height: 10),
+                    imagemSelecionada != null
+                        ? Image.file(imagemSelecionada!)
+                        : Container(),
+                    SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: _selecionarImagem,
+                      child: Text('Anexar Imagem'),
+                    ),
+                  ],
+                ),
+              ),
             ),
             SizedBox(height: 20),
             ElevatedButton(
@@ -91,16 +113,64 @@ class _TelaAdicionarPerguntasState extends State<TelaAdicionarPerguntas> {
               child: ListView.builder(
                 itemCount: _perguntas.length,
                 itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(_perguntas[index]['pergunta']),
-                    subtitle: Text(_perguntas[index]['observacao'] ?? ''),
-                    trailing: IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () {
-                        setState(() {
-                          _perguntas.removeAt(index);
-                        });
-                      },
+                  return Card(
+                    elevation: 4,
+                    margin: EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _perguntas[index]['observação'] ?? 'Sem observação',
+                            style: TextStyle(color: Colors.grey[700]),
+                          ),
+                          SizedBox(height: 10),
+                          _perguntas[index]['imagem'] != null
+                              ? GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => TelaExibirImagem(
+                                          caminhoImagem: _perguntas[index]
+                                              ['imagem'],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Image.file(
+                                    File(_perguntas[index]['imagem']),
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : Text('Nenhuma Image anexada'),
+                          SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.edit),
+                                onPressed: () {
+                                  //função para editar - ainda falta ser implementada
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete),
+                                onPressed: () {
+                                  setState(() {
+                                    _perguntas.removeAt(index);
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },

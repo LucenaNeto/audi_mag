@@ -19,42 +19,56 @@ class _TelaCriacaoAuditoriaState extends State<TelaCriacaoAuditoria> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Nome da Auditoria'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira o nome da auditoria';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  nomeAuditoria = value!;
-                },
+        child: Center(
+          child: Card(
+            elevation: 4.0, // Elevação do card, adiciona sombra
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15.0), // Bordas arredondadas
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // Minimiza o tamanho do Card
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      decoration:
+                          InputDecoration(labelText: 'Nome da Auditoria'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor, insira o nome da auditoria';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        nomeAuditoria = value!;
+                      },
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (_formKey.currentState!.validate()) {
+                          _formKey.currentState!.save();
+                          int auditoriaId =
+                              await DBHelper().salvarAuditoria(nomeAuditoria);
+                          // Salvar a auditoria e navegar para a próxima etapa (perguntas)
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => TelaAdicionarPerguntas(
+                                      auditoriaId: auditoriaId,
+                                    )),
+                          );
+                        }
+                      },
+                      child: Text('Criar Auditoria'),
+                    ),
+                  ],
+                ),
               ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    _formKey.currentState!.save();
-                    int auditoriaId =
-                        await DBHelper().salvarAuditoria(nomeAuditoria);
-                    // Salvar a auditoria e navegar para a próxima etapa (perguntas)
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              TelaAdicionarPerguntas(auditoriaId: auditoriaId)),
-                    );
-                  }
-                },
-                child: Text('Criar Auditoria'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
