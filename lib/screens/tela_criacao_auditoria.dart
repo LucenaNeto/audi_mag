@@ -15,7 +15,12 @@ class _TelaCriacaoAuditoriaState extends State<TelaCriacaoAuditoria> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Criar Nova Auditoria'),
+        title: Text(
+          'Criar Nova Auditoria',
+          style: TextStyle(fontSize: 24, color: Colors.white),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color.fromARGB(132, 10, 66, 34),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

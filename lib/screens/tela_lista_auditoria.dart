@@ -28,7 +28,12 @@ class _TelaListaAuditoriasState extends State<TelaListaAuditorias> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Auditorias Salvas'),
+        title: Text(
+          'Auditorias Salvas',
+          style: TextStyle(fontSize: 24, color: Colors.white),
+        ),
+        centerTitle: true,
+        backgroundColor: Color.fromARGB(132, 10, 66, 34),
       ),
       body: ListView.builder(
         itemCount: _auditorias.length,

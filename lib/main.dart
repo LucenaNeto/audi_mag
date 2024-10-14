@@ -25,7 +25,7 @@ class TelaInicial extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          ' Gerenciamento de Auditoria',
+          'Gerenciamento de Auditoria',
           style: TextStyle(fontSize: 24, color: Colors.white),
         ),
         centerTitle: true,

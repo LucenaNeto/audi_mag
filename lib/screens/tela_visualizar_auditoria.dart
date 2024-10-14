@@ -86,82 +86,100 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
           final pergunta = _perguntas[index];
           String? resposta = pergunta['resposta'];
 
-          return ListTile(
-            contentPadding:
-                EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
-            title: Text(pergunta['pergunta'],
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(pergunta['observacao'] ?? ''),
-                SizedBox(height: 5),
-                pergunta['imagem'] != null
-                    ? GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TelaExibirImagem(
-                                caminhoImagem: pergunta['imagem'],
-                              ),
-                            ),
-                          );
-                        },
-                        child: Image.file(
-                          File(pergunta['imagem']),
-                          height: 100,
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    : Container(),
-                SizedBox(height: 10),
-                // botão sim ou não
-                Column(
-                  children: [
-                    RadioListTile<String>(
-                      title: const Text('Sim'),
-                      value: 'Sim',
-                      groupValue: resposta,
-                      onChanged: (String? value) {
-                        setState(() {
-                          resposta = value;
-                        });
-                        _salvarResposta(pergunta['id'], value!);
-                      },
-                    ),
-                    RadioListTile<String>(
-                      title: const Text('Não'),
-                      value: 'Não',
-                      groupValue: resposta,
-                      onChanged: (String? value) {
-                        setState(() {
-                          resposta = value;
-                        });
-                        _salvarResposta(pergunta['id'], value!);
-                      },
-                    ),
-                  ],
-                )
-              ],
+          return Card(
+            // Adição do Card para melhorar o layout
+            margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+            elevation: 4.0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15.0),
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.edit),
-                  onPressed: () {
-                    _mostrarDialogoEditarPergunta(pergunta['id'],
-                        pergunta['pergunta'], pergunta['observacao']);
-                  },
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete),
-                  onPressed: () {
-                    _confirmarExclusaoPergunta(pergunta['id']);
-                  },
-                ),
-              ],
+            child: Padding(
+              padding: EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    pergunta['pergunta'],
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(pergunta['observacao'] ?? ''),
+                  SizedBox(height: 10),
+                  pergunta['imagem'] != null
+                      ? GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TelaExibirImagem(
+                                  caminhoImagem: pergunta['imagem'],
+                                ),
+                              ),
+                            );
+                          },
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8.0),
+                            child: Image.file(
+                              File(pergunta['imagem']),
+                              height: 100,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        )
+                      : Container(),
+                  SizedBox(height: 10),
+                  Column(
+                    children: [
+                      RadioListTile<String>(
+                        title: const Text('Sim'),
+                        value: 'Sim',
+                        groupValue: resposta,
+                        onChanged: (String? value) {
+                          setState(() {
+                            resposta = value;
+                          });
+                          Future.microtask(
+                              () => _salvarResposta(pergunta['id'], value!));
+                        },
+                      ),
+                      RadioListTile<String>(
+                        title: const Text('Não'),
+                        value: 'Não',
+                        groupValue: resposta,
+                        onChanged: (String? value) {
+                          setState(() {
+                            resposta = value;
+                          });
+                          Future.microtask(
+                              () => _salvarResposta(pergunta['id'], value!));
+                        },
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.edit),
+                        onPressed: () {
+                          _mostrarDialogoEditarPergunta(pergunta['id'],
+                              pergunta['pergunta'], pergunta['observacao']);
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete),
+                        onPressed: () {
+                          _confirmarExclusaoPergunta(pergunta['id']);
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           );
         },
