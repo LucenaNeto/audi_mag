@@ -1,8 +1,5 @@
-import 'dart:io';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:audi_mag/db_helper.dart';
-import 'package:audi_mag/screens/tela_exibir_imagem.dart';
 
 class TelaAdicionarPerguntas extends StatefulWidget {
   final int auditoriaId;
@@ -17,18 +14,6 @@ class _TelaAdicionarPerguntasState extends State<TelaAdicionarPerguntas> {
   final List<Map<String, dynamic>> _perguntas = [];
   String novaPergunta = '';
   String observacao = '';
-  File? imagemSelecionada;
-
-  final ImagePicker _picker = ImagePicker();
-
-  Future<void> _selecionarImagem() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        imagemSelecionada = File(pickedFile.path);
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,12 +39,12 @@ class _TelaAdicionarPerguntasState extends State<TelaAdicionarPerguntas> {
                       decoration: InputDecoration(labelText: 'Pergunta'),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Por favor, Insira a pergunta';
+                          return 'Por favor, insira a pergunta';
                         }
                         return null;
                       },
                       onChanged: (value) {
-                        novaPergunta = value; // atualiza o valor da pergunta
+                        novaPergunta = value;
                       },
                     ),
                     SizedBox(height: 10),
@@ -67,17 +52,8 @@ class _TelaAdicionarPerguntasState extends State<TelaAdicionarPerguntas> {
                       decoration:
                           InputDecoration(labelText: 'Observação (opcional)'),
                       onChanged: (value) {
-                        observacao = value; // atualiza o valor da observação
+                        observacao = value;
                       },
-                    ),
-                    SizedBox(height: 10),
-                    imagemSelecionada != null
-                        ? Image.file(imagemSelecionada!)
-                        : Container(),
-                    SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: _selecionarImagem,
-                      child: Text('Anexar Imagem'),
                     ),
                   ],
                 ),
@@ -91,18 +67,16 @@ class _TelaAdicionarPerguntasState extends State<TelaAdicionarPerguntas> {
                     widget.auditoriaId,
                     novaPergunta,
                     observacao,
-                    imagemSelecionada?.path, // Salvando o caminho da imagem
+                    null, // Removido campo de imagem
                   );
                   setState(() {
                     _perguntas.add({
                       'pergunta': novaPergunta,
                       'observacao': observacao,
-                      'imagem': imagemSelecionada?.path,
                       'resposta': null,
                     });
                     novaPergunta = '';
                     observacao = '';
-                    imagemSelecionada = null;
                   });
                 }
               },
@@ -125,30 +99,9 @@ class _TelaAdicionarPerguntasState extends State<TelaAdicionarPerguntas> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _perguntas[index]['observação'] ?? 'Sem observação',
+                            _perguntas[index]['observacao'] ?? 'Sem observação',
                             style: TextStyle(color: Colors.grey[700]),
                           ),
-                          SizedBox(height: 10),
-                          _perguntas[index]['imagem'] != null
-                              ? GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => TelaExibirImagem(
-                                          caminhoImagem: _perguntas[index]
-                                              ['imagem'],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: Image.file(
-                                    File(_perguntas[index]['imagem']),
-                                    height: 100,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : Text('Nenhuma Image anexada'),
                           SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
@@ -156,7 +109,7 @@ class _TelaAdicionarPerguntasState extends State<TelaAdicionarPerguntas> {
                               IconButton(
                                 icon: Icon(Icons.edit),
                                 onPressed: () {
-                                  //função para editar - ainda falta ser implementada
+                                  // Função para editar - ainda falta ser implementada
                                 },
                               ),
                               IconButton(

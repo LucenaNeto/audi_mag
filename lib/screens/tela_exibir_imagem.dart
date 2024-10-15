@@ -10,7 +10,12 @@ class TelaExibirImagem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Imagem Anexada'),
+        title: Text(
+          'Imagem Anexada',
+          style: TextStyle(fontSize: 24, color: Colors.white),
+        ),
+        centerTitle: true,
+        backgroundColor: Color.fromARGB(132, 10, 66, 34),
       ),
       body: Center(
         child: caminhoImagem.isNotEmpty

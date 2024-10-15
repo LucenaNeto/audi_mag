@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:audi_mag/db_helper.dart';
 import 'dart:io';
 import 'package:audi_mag/screens/tela_exibir_imagem.dart';
+import 'package:image_picker/image_picker.dart';
 
 class TelaVisualizarAuditoria extends StatefulWidget {
   final int auditoriaId;
@@ -17,6 +18,8 @@ class TelaVisualizarAuditoria extends StatefulWidget {
 
 class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
   List<Map<String, dynamic>> _perguntas = [];
+
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -74,11 +77,34 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
     _carregarPerguntas();
   }
 
+  Future<void> _anexarImagem(int perguntaId) async {
+    try {
+      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        final db = await DBHelper().database;
+        await db.update(
+          'perguntas',
+          {'imagem': pickedFile.path}, // Salva o caminho da imagem no BD
+          where: 'id = ?',
+          whereArgs: [perguntaId],
+        );
+        _carregarPerguntas(); // Recarrega para exibir a imagem
+      }
+    } catch (e) {
+      print("Erro ao anexar imagem: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Auditoria: ${widget.nomeAuditoria}'),
+        title: Text(
+          'Auditoria: ${widget.nomeAuditoria}',
+          style: TextStyle(fontSize: 24, color: Colors.white),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color.fromARGB(132, 10, 66, 34),
       ),
       body: ListView.builder(
         itemCount: _perguntas.length,
@@ -108,6 +134,7 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
                   SizedBox(height: 8),
                   Text(pergunta['observacao'] ?? ''),
                   SizedBox(height: 10),
+                  // exibe imagem se ouver
                   pergunta['imagem'] != null
                       ? GestureDetector(
                           onTap: () {
@@ -160,6 +187,17 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
                       ),
                     ],
                   ),
+                  SizedBox(height: 10),
+
+                  // Botão para anexar imagem
+                  ElevatedButton(
+                    onPressed: () {
+                      _anexarImagem(pergunta['id']);
+                    },
+                    child: Text('Anexar Imagem'),
+                  ),
+                  SizedBox(height: 10),
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
