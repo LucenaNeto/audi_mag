@@ -79,17 +79,56 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
 
   Future<void> _anexarImagem(int perguntaId) async {
     try {
-      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        final db = await DBHelper().database;
-        await db.update(
-          'perguntas',
-          {'imagem': pickedFile.path}, // Salva o caminho da imagem no BD
-          where: 'id = ?',
-          whereArgs: [perguntaId],
-        );
-        _carregarPerguntas(); // Recarrega para exibir a imagem
-      }
+      // possibilidade de escolher entrer ir para câmera ou abrir a galeria.
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Selecionar Imagem'),
+            content: Text('Escolha Uma opção:'),
+            actions: [
+              TextButton(
+                child: Text('Câmera'),
+                onPressed: () async {
+                  Navigator.of(context).pop(); //Fecha o dialogo com o usuario.
+                  final PickedFile =
+                      await _picker.pickImage(source: ImageSource.camera);
+                  if (PickedFile != null) {
+                    final db = await DBHelper().database;
+                    await db.update(
+                      'perguntas',
+                      {'imagem': PickedFile.path},
+                      where: 'id = ?',
+                      whereArgs: [perguntaId],
+                    );
+                    _carregarPerguntas();
+                  }
+                },
+              ),
+              TextButton(
+                child: Text('Galeria'),
+                onPressed: () async {
+                  Navigator.of(context).pop(); // Fecha o dialogo
+                  final pickedFile =
+                      await _picker.pickImage(source: ImageSource.gallery);
+                  if (pickedFile != null) {
+                    final db = await DBHelper().database;
+                    await db.update(
+                      'perguntas',
+                      {
+                        'imagem': pickedFile.path
+                      }, // Salva o caminho da imagem no BD
+                      where: 'id = ?',
+                      whereArgs: [perguntaId],
+                    );
+                    _carregarPerguntas(); // Recarrega para exibir a imagem
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      );
     } catch (e) {
       print("Erro ao anexar imagem: $e");
     }
