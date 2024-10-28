@@ -224,6 +224,18 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
                               () => _salvarResposta(pergunta['id'], value!));
                         },
                       ),
+                      RadioListTile<String>(
+                        title: const Text('Não se aplica'),
+                        value: 'Não se aplica',
+                        groupValue: resposta,
+                        onChanged: (String? value) {
+                          setState(() {
+                            resposta = value;
+                          });
+                          Future.microtask(
+                              () => _salvarResposta(pergunta['id'], value!));
+                        },
+                      ),
                     ],
                   ),
                   SizedBox(height: 10),

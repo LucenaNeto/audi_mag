@@ -68,7 +68,7 @@ class _TelaCriacaoAuditoriaState extends State<TelaCriacaoAuditoria> {
                           );
                         }
                       },
-                      child: Text('Criar Auditoria'),
+                      child: Text('Salvar'),
                     ),
                   ],
                 ),
