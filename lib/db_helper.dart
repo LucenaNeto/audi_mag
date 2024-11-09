@@ -58,5 +58,15 @@ class DBHelper {
     });
   }
 
+  Future<List<Map<String, dynamic>>> buscarPerguntasDaAuditoria(
+      int auditoriaId) async {
+    final db = await database;
+    return await db.query(
+      'perguntas',
+      where: 'auditoriaId = ?',
+      whereArgs: [auditoriaId],
+    );
+  }
+
   // Funções para obter e excluir auditorias/
 }

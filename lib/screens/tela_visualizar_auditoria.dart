@@ -3,6 +3,10 @@ import 'package:audi_mag/db_helper.dart';
 import 'dart:io';
 import 'package:audi_mag/screens/tela_exibir_imagem.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class TelaVisualizarAuditoria extends StatefulWidget {
   final int auditoriaId;
@@ -14,6 +18,58 @@ class TelaVisualizarAuditoria extends StatefulWidget {
   @override
   _TelaVisualizarAuditoriaState createState() =>
       _TelaVisualizarAuditoriaState();
+}
+
+class RelatorioService {
+  Future<void> gerarRelatorioPDF(int auditoriaId) async {
+    // Inicia PDF
+    final conteudoAuditoria = await _obterConteudoAuditoria(auditoriaId);
+    final pdf = pw.Document();
+
+    // Conteudo do PDF
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (context) => [
+          pw.Text('Relatorio da Auditoria ${auditoriaId}',
+              style: pw.TextStyle(fontSize: 24)),
+          pw.SizedBox(height: 20),
+          ...conteudoAuditoria,
+        ],
+      ),
+    );
+
+    // Salvar e visualizar o PDF
+    final output = await getTemporaryDirectory();
+    final file = File("${output.path}/relatorio_auditoria_$auditoriaId");
+    await file.writeAsBytes(await pdf.save());
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat) async => pdf.save(),
+    );
+  }
+
+  Future<List<pw.Widget>> _obterConteudoAuditoria(int auditoriaId) async {
+    // ainda falta criar a função de buscars as perguntas, respostas e imagens no banco !!!!!
+    final perguntasRespostas =
+        await DBHelper().buscarPerguntasDaAuditoria(auditoriaId);
+    List<pw.Widget> widgets = [];
+
+    for (var item in perguntasRespostas) {
+      widgets.add(pw.Text("Pergunta: ${item['pergunta']}"));
+      widgets.add(pw.Text("Resposta: ${item['resposta']}"));
+      widgets.add(pw.Text("Observacao: ${item['observacao']}"));
+
+      if (item['imagem'] != null) {
+        final imageFile = File(item['imagem']);
+        final image = pw.MemoryImage(imageFile.readAsBytesSync());
+        widgets.add(pw.Image(image, width: 150, height: 150));
+      }
+
+      widgets.add(pw.SizedBox(height: 20));
+    }
+
+    return widgets;
+  }
 }
 
 class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
@@ -140,9 +196,17 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
       appBar: AppBar(
         title: Text(
           'Auditoria: ${widget.nomeAuditoria}',
-          style: TextStyle(fontSize: 24, color: Colors.white),
+          style: TextStyle(fontSize: 15, color: Colors.white),
         ),
-        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.picture_as_pdf),
+            onPressed: () async {
+              await RelatorioService().gerarRelatorioPDF(widget.auditoriaId);
+            },
+          )
+        ],
+        centerTitle: false,
         backgroundColor: const Color.fromARGB(132, 10, 66, 34),
       ),
       body: ListView.builder(
