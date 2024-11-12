@@ -56,9 +56,10 @@ class _TelaCriacaoAuditoriaState extends State<TelaCriacaoAuditoria> {
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
                           _formKey.currentState!.save();
+                          final dbHelper = DBHelper();
                           int auditoriaId =
-                              await DBHelper().salvarAuditoria(nomeAuditoria);
-                          // Salvar a auditoria e navegar para a próxima etapa (perguntas)
+                              await dbHelper.criarNovaAuditoria(nomeAuditoria);
+                          // Salvar a auditoria e adiciona perguntas pre fixadas
                           Navigator.push(
                             context,
                             MaterialPageRoute(

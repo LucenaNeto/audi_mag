@@ -1,3 +1,4 @@
+import 'package:audi_mag/main.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -68,5 +69,48 @@ class DBHelper {
     );
   }
 
-  // Funções para obter e excluir auditorias/
+  // Funções para obter e excluir auditoria
+
+  // Perguntas base para auditorias ( pergunta padrão)
+  // pesquisar metodo
+  List<Map<String, dynamic>> perguntasPadrao = [
+    {
+      'pergunta': 'Qual é o estado geral?',
+      'observacao': '',
+      'imagem': null,
+      'resposta': null
+    },
+    {
+      'pergunta': 'O local está limpo?',
+      'observacao': '',
+      'imagem': null,
+      'resposta': null
+    },
+    {
+      'pergunta': 'produto vencido?',
+      'observacao': '',
+      'imagem': null,
+      'resposta': null
+    },
+  ];
+
+  Future<void> adicionarPerguntaPadrao(int auditoriaId) async {
+    final db = await database;
+    for (var pergunta in perguntasPadrao) {
+      await db.insert('perguntas', {
+        'auditoriaId': auditoriaId,
+        'pergunta': pergunta['pergunta'],
+        'observacao': pergunta['observacao'],
+        'imagem': pergunta['imagem'],
+        'resposta': pergunta['resposta']
+      });
+    }
+  }
+
+  Future<int> criarNovaAuditoria(String nomeAuditoria) async {
+    final auditoriaId = await salvarAuditoria(nomeAuditoria);
+    await adicionarPerguntaPadrao(auditoriaId);
+
+    return auditoriaId;
+  }
 }
