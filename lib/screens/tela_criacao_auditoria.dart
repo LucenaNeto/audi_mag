@@ -1,4 +1,4 @@
-import 'package:audi_mag/screens/tela_adicionar_perguntas.dart';
+//import 'package:audi_mag/screens/tela_adicionar_perguntas.dart';
 import 'package:flutter/material.dart';
 import 'package:audi_mag/db_helper.dart';
 
@@ -8,74 +8,89 @@ class TelaCriacaoAuditoria extends StatefulWidget {
 }
 
 class _TelaCriacaoAuditoriaState extends State<TelaCriacaoAuditoria> {
-  final _formKey = GlobalKey<FormState>();
-  String nomeAuditoria = '';
+  final TextEditingController nomeAuditoriaController = TextEditingController();
+  List<Map<String, dynamic>> perguntasPadrao = [];
+  List<int> perguntasSelecionadas = []; // IDs das perguntas selecionadas
+
+  @override
+  void initState() {
+    super.initState();
+    carregarPerguntasPadrao();
+  }
+
+  Future<void> carregarPerguntasPadrao() async {
+    final dbHelper = DBHelper();
+    final data = await dbHelper.obterPerguntasPadrao();
+    setState(() {
+      perguntasPadrao = data;
+    });
+  }
+
+  Future<void> criarAuditoria() async {
+    final dbHelper = DBHelper();
+    int auditoriaId =
+        await dbHelper.salvarAuditoria(nomeAuditoriaController.text);
+
+    // Adiciona perguntas padrão selecionadas à auditoria
+    for (var perguntaId in perguntasSelecionadas) {
+      var pergunta = perguntasPadrao.firstWhere((p) => p['id'] == perguntaId);
+      await dbHelper.salvarPergunta(
+        auditoriaId,
+        pergunta['pergunta'],
+        pergunta['observacao'],
+        null, // a imagem pode ser adicionada posteriormente, se necessário
+      );
+    }
+
+    Navigator.pop(context); // Fecha a tela após a criação da auditoria
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Criar Nova Auditoria',
+          'Criar Auditoria',
           style: TextStyle(fontSize: 24, color: Colors.white),
         ),
         centerTitle: true,
-        backgroundColor: const Color.fromARGB(132, 10, 66, 34),
+        backgroundColor: Color.fromARGB(132, 10, 66, 34),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Center(
-          child: Card(
-            elevation: 4.0, // Elevação do card, adiciona sombra
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15.0), // Bordas arredondadas
+        child: Column(
+          children: [
+            TextField(
+              controller: nomeAuditoriaController,
+              decoration: InputDecoration(labelText: 'Nome da Auditoria'),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min, // Minimiza o tamanho do Card
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextFormField(
-                      decoration:
-                          InputDecoration(labelText: 'Nome da Auditoria'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Por favor, insira o nome da auditoria';
+            Expanded(
+              child: ListView.builder(
+                itemCount: perguntasPadrao.length,
+                itemBuilder: (context, index) {
+                  final pergunta = perguntasPadrao[index];
+                  return CheckboxListTile(
+                    title: Text(pergunta['pergunta']),
+                    subtitle: Text(pergunta['observacao'] ?? ''),
+                    value: perguntasSelecionadas.contains(pergunta['id']),
+                    onChanged: (bool? selecionada) {
+                      setState(() {
+                        if (selecionada == true) {
+                          perguntasSelecionadas.add(pergunta['id']);
+                        } else {
+                          perguntasSelecionadas.remove(pergunta['id']);
                         }
-                        return null;
-                      },
-                      onSaved: (value) {
-                        nomeAuditoria = value!;
-                      },
-                    ),
-                    SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          _formKey.currentState!.save();
-                          final dbHelper = DBHelper();
-                          int auditoriaId =
-                              await dbHelper.criarNovaAuditoria(nomeAuditoria);
-                          // Salvar a auditoria e adiciona perguntas pre fixadas
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => TelaAdicionarPerguntas(
-                                      auditoriaId: auditoriaId,
-                                    )),
-                          );
-                        }
-                      },
-                      child: Text('Salvar'),
-                    ),
-                  ],
-                ),
+                      });
+                    },
+                  );
+                },
               ),
             ),
-          ),
+            ElevatedButton(
+              onPressed: criarAuditoria,
+              child: Text('Salvar Auditoria'),
+            ),
+          ],
         ),
       ),
     );

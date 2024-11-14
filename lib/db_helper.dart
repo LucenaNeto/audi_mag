@@ -1,4 +1,3 @@
-import 'package:audi_mag/main.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -19,7 +18,7 @@ class DBHelper {
     String path = join(await getDatabasesPath(), 'auditoria.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE auditorias (
@@ -27,6 +26,7 @@ class DBHelper {
             nome TEXT
           )
         ''');
+
         await db.execute('''
           CREATE TABLE perguntas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,15 +38,46 @@ class DBHelper {
             FOREIGN KEY (auditoriaId) REFERENCES auditorias(id)
           )
         ''');
+
+        await db.execute('''
+          CREATE TABLE perguntas_padrao(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pergunta TEXT,
+            observacao TEXT,
+            imagem TEXT,
+            dataCriacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          // adiciona a tabela nova se ela ainda não existir
+          await db.execute('''
+            CREATE TABLE perguntas_padrao (
+            id INTEGER PRIMARY KAY AUTOINCREMENT, 
+            pergunta TEXT, 
+            imagem TEXT,
+            dataCriacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+''');
+        }
       },
     );
   }
 
+  // Métodos para manipular auditorias
   Future<int> salvarAuditoria(String nome) async {
     final db = await database;
     return await db.insert('auditorias', {'nome': nome});
   }
 
+  Future<int> criarNovaAuditoria(String nomeAuditoria) async {
+    final auditoriaId = await salvarAuditoria(nomeAuditoria);
+    await adicionarPerguntasPadraoPreDefinidas(auditoriaId);
+    return auditoriaId;
+  }
+
+  // Métodos para manipular perguntas
   Future<int> salvarPergunta(int auditoriaId, String pergunta,
       String observacao, String? imagem) async {
     final db = await database;
@@ -59,6 +90,17 @@ class DBHelper {
     });
   }
 
+  Future<int> salvarPerguntaPadrao(String pergunta, String? observacao) async {
+    final db = await database;
+    return await db.insert('perguntas_padrao',
+        {'pergunta': pergunta, 'observacao': observacao ?? '', 'imagem': null});
+  }
+
+  Future<List<Map<String, dynamic>>> buscarPerguntasPadrao() async {
+    final db = await database;
+    return await db.query('perguntas_padrao');
+  }
+
   Future<List<Map<String, dynamic>>> buscarPerguntasDaAuditoria(
       int auditoriaId) async {
     final db = await database;
@@ -69,11 +111,8 @@ class DBHelper {
     );
   }
 
-  // Funções para obter e excluir auditoria
-
-  // Perguntas base para auditorias ( pergunta padrão)
-  // pesquisar metodo
-  List<Map<String, dynamic>> perguntasPadrao = [
+  // Perguntas predefinidas para adicionar automaticamente a novas auditorias
+  List<Map<String, dynamic>> perguntasPadraoPreDefinidas = [
     {
       'pergunta': 'Qual é o estado geral?',
       'observacao': '',
@@ -87,16 +126,16 @@ class DBHelper {
       'resposta': null
     },
     {
-      'pergunta': 'produto vencido?',
+      'pergunta': 'Produto vencido?',
       'observacao': '',
       'imagem': null,
       'resposta': null
     },
   ];
 
-  Future<void> adicionarPerguntaPadrao(int auditoriaId) async {
+  Future<void> adicionarPerguntasPadraoPreDefinidas(int auditoriaId) async {
     final db = await database;
-    for (var pergunta in perguntasPadrao) {
+    for (var pergunta in perguntasPadraoPreDefinidas) {
       await db.insert('perguntas', {
         'auditoriaId': auditoriaId,
         'pergunta': pergunta['pergunta'],
@@ -107,10 +146,51 @@ class DBHelper {
     }
   }
 
-  Future<int> criarNovaAuditoria(String nomeAuditoria) async {
-    final auditoriaId = await salvarAuditoria(nomeAuditoria);
-    await adicionarPerguntaPadrao(auditoriaId);
+  // Métodos para  perguntas padrão  a  auditorias
+  Future<void> adicionarPerguntasSelecionadasAAuditoria(
+      int auditoriaId, List<int> perguntaIds) async {
+    final db = await database;
+    for (var perguntaId in perguntaIds) {
+      final pergunta = await db.query(
+        'perguntas_padrao',
+        where: 'id = ?',
+        whereArgs: [perguntaId],
+      );
 
-    return auditoriaId;
+      if (pergunta.isNotEmpty) {
+        await db.insert('perguntas', {
+          'auditoriaId': auditoriaId,
+          'pergunta': pergunta[0]['pergunta'],
+          'observacao': pergunta[0]['observacao'],
+          'imagem': pergunta[0]['imagem'],
+          'resposta': null,
+        });
+      }
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> obterPerguntasPadrao() async {
+    final db = await database;
+    return await db.query('perguntas_padrao');
+  }
+
+  Future<int> atualizarPerguntaPadrao(
+      int id, String novaPergunta, String novaObservacao) async {
+    final db = await database;
+    return await db.update(
+      'perguntas_padrao',
+      {'pergunta': novaPergunta, 'observacao': novaObservacao},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> excluirPerguntaPadrao(int id) async {
+    final db = await database;
+    return await db.delete(
+      'perguntas_padrao',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }

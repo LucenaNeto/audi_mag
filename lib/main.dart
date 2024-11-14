@@ -1,4 +1,5 @@
 import 'package:audi_mag/screens/tela_criacao_auditoria.dart';
+import 'package:audi_mag/screens/tela_gerenciar_perguntas.dart';
 import 'package:audi_mag/screens/tela_lista_auditoria.dart';
 import 'package:flutter/material.dart';
 
@@ -72,6 +73,17 @@ class TelaInicial extends StatelessWidget {
               },
               child: Text('Ver Auditorias Salvas'),
             ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => TelaGerenciarPerguntas()),
+                );
+              },
+              child: Text('Gerenciar Perguntas'),
+            )
           ],
         ),
       ),
