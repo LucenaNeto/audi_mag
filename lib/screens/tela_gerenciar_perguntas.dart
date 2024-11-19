@@ -9,6 +9,7 @@ class TelaGerenciarPerguntas extends StatefulWidget {
 class _TelaGerenciarPerguntasState extends State<TelaGerenciarPerguntas> {
   final TextEditingController perguntaController = TextEditingController();
   final TextEditingController observacaoController = TextEditingController();
+  String canalSelecionado = 'Loja'; // inicio do canal
   List<Map<String, dynamic>> perguntas = [];
 
   @override
@@ -24,8 +25,8 @@ class _TelaGerenciarPerguntasState extends State<TelaGerenciarPerguntas> {
       perguntas = data;
     });
   }
-
-  Future<void> salvarPergunta() async {
+/*
+  Future<void> salvarPerguntaPadrao() async {
     await DBHelper().salvarPerguntaPadrao(
       perguntaController.text,
       observacaoController.text,
@@ -34,6 +35,7 @@ class _TelaGerenciarPerguntasState extends State<TelaGerenciarPerguntas> {
     observacaoController.clear();
     carregarPerguntas(); // Recarrega as perguntas após salvar
   }
+  */
 
   Future<void> editarPergunta(
       int id, String novaPergunta, String novaObservacao) async {
@@ -115,8 +117,44 @@ class _TelaGerenciarPerguntasState extends State<TelaGerenciarPerguntas> {
               controller: observacaoController,
               decoration: InputDecoration(labelText: 'Observação (opcional)'),
             ),
+            DropdownButton<String>(
+              value: canalSelecionado,
+              items: <String>['Loja', 'VD'].map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  canalSelecionado = newValue!;
+                });
+              },
+            ),
             ElevatedButton(
-              onPressed: salvarPergunta,
+              onPressed: () async {
+                if (perguntaController.text.isNotEmpty) {
+                  await DBHelper().salvarPerguntaPadrao(
+                    perguntaController.text,
+                    observacaoController.text,
+                    canalSelecionado,
+                  );
+
+                  // Limpa os campos de entrada após salvar
+                  perguntaController.clear();
+                  observacaoController.clear();
+
+                  // Exibe uma mensagem de confirmação
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Pergunta salva com sucesso!')),
+                  );
+                } else {
+                  // Exibe uma mensagem de erro se o campo de pergunta estiver vazio
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('A pergunta não pode estar vazia')),
+                  );
+                }
+              },
               child: Text('Salvar Pergunta'),
             ),
             Expanded(

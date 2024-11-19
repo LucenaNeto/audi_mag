@@ -18,7 +18,7 @@ class DBHelper {
     String path = join(await getDatabasesPath(), 'auditoria.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE auditorias (
@@ -50,16 +50,10 @@ class DBHelper {
         ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          // adiciona a tabela nova se ela ainda não existir
-          await db.execute('''
-            CREATE TABLE perguntas_padrao (
-            id INTEGER PRIMARY KAY AUTOINCREMENT, 
-            pergunta TEXT, 
-            imagem TEXT,
-            dataCriacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-''');
+        // Adicione a coluna `canal` se estiver atualizando de uma versão anterior
+        if (oldVersion < 3) {
+          await db
+              .execute('ALTER TABLE perguntas_padrao ADD COLUMN canal TEXT');
         }
       },
     );
@@ -90,10 +84,15 @@ class DBHelper {
     });
   }
 
-  Future<int> salvarPerguntaPadrao(String pergunta, String? observacao) async {
+  Future<int> salvarPerguntaPadrao(
+      String pergunta, String? observacao, String canal) async {
     final db = await database;
-    return await db.insert('perguntas_padrao',
-        {'pergunta': pergunta, 'observacao': observacao ?? '', 'imagem': null});
+    return await db.insert('perguntas_padrao', {
+      'pergunta': pergunta,
+      'observacao': observacao ?? '',
+      'imagem': null,
+      'canal': canal,
+    });
   }
 
   Future<List<Map<String, dynamic>>> buscarPerguntasPadrao() async {
@@ -191,6 +190,17 @@ class DBHelper {
       'perguntas_padrao',
       where: 'id = ?',
       whereArgs: [id],
+    );
+  }
+
+  // nova função de divisão de vd e loja
+  Future<List<Map<String, dynamic>>> buscarPerguntasPorCanal(
+      String canal) async {
+    final db = await database;
+    return await db.query(
+      'perguntas_padrao',
+      where: 'canal = ?',
+      whereArgs: [canal],
     );
   }
 }

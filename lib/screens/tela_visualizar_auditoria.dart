@@ -7,6 +7,8 @@ import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:share_plus/share_plus.dart';
+import 'package:cross_file/cross_file.dart';
 
 class TelaVisualizarAuditoria extends StatefulWidget {
   final int auditoriaId;
@@ -21,7 +23,7 @@ class TelaVisualizarAuditoria extends StatefulWidget {
 }
 
 class RelatorioService {
-  Future<void> gerarRelatorioPDF(int auditoriaId) async {
+  Future<String> gerarRelatorioPDF(int auditoriaId) async {
     // Inicia PDF
     final conteudoAuditoria = await _obterConteudoAuditoria(auditoriaId);
     final pdf = pw.Document();
@@ -31,7 +33,7 @@ class RelatorioService {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         build: (context) => [
-          pw.Text('Relatorio da Auditoria ${auditoriaId}',
+          pw.Text('Relatorio da Auditoria $auditoriaId',
               style: pw.TextStyle(fontSize: 24)),
           pw.SizedBox(height: 20),
           ...conteudoAuditoria,
@@ -41,15 +43,19 @@ class RelatorioService {
 
     // Salvar e visualizar o PDF
     final output = await getTemporaryDirectory();
-    final file = File("${output.path}/relatorio_auditoria_$auditoriaId");
+    final filePath = "${output.path}/relatorio_auditoria_$auditoriaId.pdf";
+    final file = File(filePath);
     await file.writeAsBytes(await pdf.save());
+
+    /*
     await Printing.layoutPdf(
-      onLayout: (PdfPageFormat) async => pdf.save(),
+      onLayout: (_) async => pdf.save(),
     );
+    */
+    return filePath;
   }
 
   Future<List<pw.Widget>> _obterConteudoAuditoria(int auditoriaId) async {
-    // ainda falta criar a função de buscars as perguntas, respostas e imagens no banco !!!!!
     final perguntasRespostas =
         await DBHelper().buscarPerguntasDaAuditoria(auditoriaId);
     List<pw.Widget> widgets = [];
@@ -63,11 +69,11 @@ class RelatorioService {
         final imageFile = File(item['imagem']);
         final image = pw.MemoryImage(imageFile.readAsBytesSync());
         widgets.add(pw.Image(image, width: 150, height: 150));
+      } else {
+        widgets.add(pw.Text('Imagem não encontrada'));
       }
-
       widgets.add(pw.SizedBox(height: 20));
     }
-
     return widgets;
   }
 }
@@ -81,6 +87,12 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
   void initState() {
     super.initState();
     _carregarPerguntas();
+  }
+
+  void _exibirMensagemErro(BuildContext context, String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mensagem)),
+    );
   }
 
   Future<void> _carregarPerguntas() async {
@@ -114,7 +126,10 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
     );
     _carregarPerguntas();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Pergunta excluída com sucesso')),
+      SnackBar(
+        content: Text('Pergunta excluída com sucesso'),
+        backgroundColor: Colors.green,
+      ),
     );
   }
 
@@ -200,11 +215,31 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.picture_as_pdf),
+            icon: Icon(Icons.share),
+            tooltip: 'Compartilhar relatório',
             onPressed: () async {
-              await RelatorioService().gerarRelatorioPDF(widget.auditoriaId);
+              try {
+                // Retorio e obtém o caminho do arquivo
+                final filePath = await RelatorioService()
+                    .gerarRelatorioPDF(widget.auditoriaId);
+                final file = File(filePath);
+
+                // Verifica se o arquivo existe
+                if (file.existsSync()) {
+                  Share.shareXFiles(
+                    [XFile(filePath, mimeType: 'application/pdf')],
+                  );
+                } else {
+                  _exibirMensagemErro(
+                      context, "Erro ao localizar o relatório gerado.");
+                }
+              } catch (e) {
+                print("Erro ao compartilhar arquivo: $e");
+                _exibirMensagemErro(
+                    context, "Erro inesperado ao compartilhar o relatório.");
+              }
             },
-          )
+          ),
         ],
         centerTitle: false,
         backgroundColor: const Color.fromARGB(132, 10, 66, 34),
@@ -356,9 +391,9 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
             ),
             TextButton(
               child: Text('Excluir'),
-              onPressed: () {
-                _excluirPergunta(perguntaId);
+              onPressed: () async {
                 Navigator.of(context).pop();
+                await _excluirPergunta(perguntaId);
               },
             ),
           ],

@@ -11,6 +11,13 @@ class _TelaCriacaoAuditoriaState extends State<TelaCriacaoAuditoria> {
   final TextEditingController nomeAuditoriaController = TextEditingController();
   List<Map<String, dynamic>> perguntasPadrao = [];
   List<int> perguntasSelecionadas = []; // IDs das perguntas selecionadas
+  String canalSelecionado = 'Loja';
+  List<Map<String, dynamic>> perguntasCanal = [];
+
+  void carregarPerguntasCanal() async {
+    perguntasCanal = await DBHelper().buscarPerguntasPorCanal(canalSelecionado);
+    setState(() {}); // Atualizar a tela com as perguntas carregadas
+  }
 
   @override
   void initState() {
@@ -64,14 +71,29 @@ class _TelaCriacaoAuditoriaState extends State<TelaCriacaoAuditoria> {
               controller: nomeAuditoriaController,
               decoration: InputDecoration(labelText: 'Nome da Auditoria'),
             ),
+            DropdownButton<String>(
+              value: canalSelecionado,
+              items: <String>['Loja', 'VD'].map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  canalSelecionado = newValue!;
+                });
+                carregarPerguntasCanal(); // Carregar perguntas do canal selecionado
+              },
+            ),
             Expanded(
               child: ListView.builder(
-                itemCount: perguntasPadrao.length,
+                itemCount: perguntasCanal.length,
                 itemBuilder: (context, index) {
-                  final pergunta = perguntasPadrao[index];
+                  final pergunta = perguntasCanal[index];
                   return CheckboxListTile(
-                    title: Text(pergunta['pergunta']),
-                    subtitle: Text(pergunta['observacao'] ?? ''),
+                    title: Text(perguntasCanal[index]['pergunta']),
+                    subtitle: Text(perguntasCanal[index]['observacao'] ?? ''),
                     value: perguntasSelecionadas.contains(pergunta['id']),
                     onChanged: (bool? selecionada) {
                       setState(() {
