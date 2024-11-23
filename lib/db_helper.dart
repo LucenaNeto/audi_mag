@@ -18,12 +18,13 @@ class DBHelper {
     String path = join(await getDatabasesPath(), 'auditoria.db');
     return await openDatabase(
       path,
-      version: 3,
+      version: 5, // Versão do banco atualizada para 5
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE auditorias (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT
+            nome TEXT,
+            data_criacao TEXT
           )
         ''');
 
@@ -45,29 +46,37 @@ class DBHelper {
             pergunta TEXT,
             observacao TEXT,
             imagem TEXT,
-            dataCriacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            canal TEXT
           )
         ''');
       },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        // Adicione a coluna `canal` se estiver atualizando de uma versão anterior
-        if (oldVersion < 3) {
-          await db
-              .execute('ALTER TABLE perguntas_padrao ADD COLUMN canal TEXT');
-        }
-      },
+      onUpgrade: _onUpgrade, // Chamando o método onUpgrade
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 4) {
+      // Adiciona coluna 'data_criacao' na tabela 'auditorias'
+      await db.execute('ALTER TABLE auditorias ADD COLUMN data_criacao TEXT');
+    }
+    if (oldVersion < 5) {
+      // Adiciona coluna 'canal' na tabela 'perguntas_padrao'
+      await db.execute('ALTER TABLE perguntas_padrao ADD COLUMN canal TEXT');
+    }
   }
 
   // Métodos para manipular auditorias
   Future<int> salvarAuditoria(String nome) async {
     final db = await database;
-    return await db.insert('auditorias', {'nome': nome});
+    final dataCriacao = DateTime.now().toIso8601String();
+    return await db.insert('auditorias', {
+      'nome': nome,
+      'data_criacao': dataCriacao,
+    });
   }
 
   Future<int> criarNovaAuditoria(String nomeAuditoria) async {
     final auditoriaId = await salvarAuditoria(nomeAuditoria);
-    await adicionarPerguntasPadraoPreDefinidas(auditoriaId);
     return auditoriaId;
   }
 
@@ -110,42 +119,7 @@ class DBHelper {
     );
   }
 
-  // Perguntas predefinidas para adicionar automaticamente a novas auditorias
-  List<Map<String, dynamic>> perguntasPadraoPreDefinidas = [
-    {
-      'pergunta': 'Qual é o estado geral?',
-      'observacao': '',
-      'imagem': null,
-      'resposta': null
-    },
-    {
-      'pergunta': 'O local está limpo?',
-      'observacao': '',
-      'imagem': null,
-      'resposta': null
-    },
-    {
-      'pergunta': 'Produto vencido?',
-      'observacao': '',
-      'imagem': null,
-      'resposta': null
-    },
-  ];
-
-  Future<void> adicionarPerguntasPadraoPreDefinidas(int auditoriaId) async {
-    final db = await database;
-    for (var pergunta in perguntasPadraoPreDefinidas) {
-      await db.insert('perguntas', {
-        'auditoriaId': auditoriaId,
-        'pergunta': pergunta['pergunta'],
-        'observacao': pergunta['observacao'],
-        'imagem': pergunta['imagem'],
-        'resposta': pergunta['resposta']
-      });
-    }
-  }
-
-  // Métodos para  perguntas padrão  a  auditorias
+  // Métodos para  perguntas padrão a auditorias
   Future<void> adicionarPerguntasSelecionadasAAuditoria(
       int auditoriaId, List<int> perguntaIds) async {
     final db = await database;

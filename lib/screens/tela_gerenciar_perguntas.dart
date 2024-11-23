@@ -111,26 +111,65 @@ class _TelaGerenciarPerguntasState extends State<TelaGerenciarPerguntas> {
           children: [
             TextField(
               controller: perguntaController,
-              decoration: InputDecoration(labelText: 'Pergunta'),
+              decoration: InputDecoration(
+                  labelText: 'Pergunta',
+                  hintText: 'Adicione a pergunta',
+                  fillColor: Colors.grey[200],
+                  filled: true,
+                  prefixIcon: Icon(Icons.ad_units),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                  )),
             ),
+            SizedBox(height: 10),
             TextField(
               controller: observacaoController,
-              decoration: InputDecoration(labelText: 'Observação (opcional)'),
+              decoration: InputDecoration(
+                  labelText: 'Observação (opcional)',
+                  hintText: 'Informação de apoio',
+                  fillColor: Colors.grey[200],
+                  filled: true,
+                  prefixIcon: Icon(Icons.announcement_outlined),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20.0))),
             ),
-            DropdownButton<String>(
-              value: canalSelecionado,
-              items: <String>['Loja', 'VD'].map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  canalSelecionado = newValue!;
-                });
-              },
+            SizedBox(height: 10),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey),
+              ),
+              child: DropdownButton<String>(
+                value: canalSelecionado.isEmpty ? null : canalSelecionado,
+                hint: Text('Selecione um canal'),
+                items: <String>['Loja', 'VD'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Row(
+                      children: [
+                        Icon(
+                          value == 'Loja' ? Icons.store : Icons.local_shipping,
+                          color: Colors.blue,
+                        ),
+                        SizedBox(width: 8),
+                        Text(value),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    canalSelecionado = newValue!;
+                  });
+                },
+                underline: SizedBox(),
+                isExpanded: true,
+                icon: Icon(Icons.arrow_drop_down_circle, color: Colors.blue),
+              ),
             ),
+            SizedBox(height: 5),
             ElevatedButton(
               onPressed: () async {
                 if (perguntaController.text.isNotEmpty) {

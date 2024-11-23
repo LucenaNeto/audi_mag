@@ -69,7 +69,15 @@ class _TelaCriacaoAuditoriaState extends State<TelaCriacaoAuditoria> {
           children: [
             TextField(
               controller: nomeAuditoriaController,
-              decoration: InputDecoration(labelText: 'Nome da Auditoria'),
+              decoration: InputDecoration(
+                labelText: 'Nome da Auditoria',
+                hintText: 'Digite o nome da Auditoria',
+                fillColor: Colors.grey[200],
+                filled: true,
+                prefixIcon: Icon(Icons.assignment),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20.0)),
+              ),
             ),
             DropdownButton<String>(
               value: canalSelecionado,
@@ -86,31 +94,57 @@ class _TelaCriacaoAuditoriaState extends State<TelaCriacaoAuditoria> {
                 carregarPerguntasCanal(); // Carregar perguntas do canal selecionado
               },
             ),
+            SizedBox(height: 10),
+            CheckboxListTile(
+              title: Text('Selecionar Todas'),
+              value: perguntasSelecionadas.length == perguntasCanal.length &&
+                  perguntasCanal.isNotEmpty,
+              onChanged: (bool? selecionado) {
+                setState(() {
+                  if (selecionado == true) {
+                    perguntasSelecionadas =
+                        perguntasCanal.map((p) => p['id'] as int).toList();
+                  } else {
+                    perguntasSelecionadas.clear();
+                  }
+                });
+              },
+            ),
             Expanded(
               child: ListView.builder(
                 itemCount: perguntasCanal.length,
                 itemBuilder: (context, index) {
                   final pergunta = perguntasCanal[index];
-                  return CheckboxListTile(
-                    title: Text(perguntasCanal[index]['pergunta']),
-                    subtitle: Text(perguntasCanal[index]['observacao'] ?? ''),
-                    value: perguntasSelecionadas.contains(pergunta['id']),
-                    onChanged: (bool? selecionada) {
-                      setState(() {
-                        if (selecionada == true) {
-                          perguntasSelecionadas.add(pergunta['id']);
-                        } else {
-                          perguntasSelecionadas.remove(pergunta['id']);
-                        }
-                      });
-                    },
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 5),
+                    child: CheckboxListTile(
+                      title: Text(perguntasCanal[index]['pergunta']),
+                      subtitle: Text(perguntasCanal[index]['observacao'] ?? ''),
+                      value: perguntasSelecionadas.contains(pergunta['id']),
+                      onChanged: (bool? selecionada) {
+                        setState(() {
+                          if (selecionada == true) {
+                            perguntasSelecionadas.add(pergunta['id']);
+                          } else {
+                            perguntasSelecionadas.remove(pergunta['id']);
+                          }
+                        });
+                      },
+                    ),
                   );
                 },
               ),
             ),
             ElevatedButton(
               onPressed: criarAuditoria,
-              child: Text('Salvar Auditoria'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(132, 10, 66, 34),
+                padding: EdgeInsets.symmetric(vertical: 18, horizontal: 18),
+              ),
+              child: Text(
+                'Salvar Auditoria',
+                style: TextStyle(fontSize: 12, color: Colors.white),
+              ),
             ),
           ],
         ),
