@@ -201,25 +201,62 @@ class _TelaGerenciarPerguntasState extends State<TelaGerenciarPerguntas> {
                 itemCount: perguntas.length,
                 itemBuilder: (context, index) {
                   final pergunta = perguntas[index];
-                  return ListTile(
-                    title: Text(pergunta['pergunta']),
-                    subtitle: Text(pergunta['observacao'] ?? ''),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.edit),
-                          onPressed: () {
-                            mostrarDialogoEdicao(pergunta);
-                          },
+
+                  return Card(
+                    elevation: 4,
+                    margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListTile(
+                      leading: pergunta['temImagem'] == true
+                          ? Icon(Icons.image,
+                              color: Colors
+                                  .orange) // Ícone para perguntas com imagem
+                          : Icon(Icons.question_mark,
+                              color:
+                                  Colors.blue), // Ícone padrão para perguntas
+                      title: Text(
+                        pergunta['pergunta'],
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: pergunta['respondida'] == true
+                              ? Colors.green
+                              : Colors
+                                  .black, // Destaque para perguntas respondidas
                         ),
-                        IconButton(
-                          icon: Icon(Icons.delete),
-                          onPressed: () {
-                            excluirPergunta(pergunta['id']);
-                          },
-                        ),
-                      ],
+                      ),
+                      subtitle: pergunta['observacao'] != null &&
+                              pergunta['observacao'].isNotEmpty
+                          ? Text("Obs: ${pergunta['observacao']}")
+                          : null,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.edit,
+                                color:
+                                    Colors.blue), // Ícone de edição estilizado
+                            onPressed: () {
+                              mostrarDialogoEdicao(
+                                  pergunta); // Lógica de edição
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete,
+                                color:
+                                    Colors.red), // Ícone de exclusão estilizado
+                            onPressed: () {
+                              excluirPergunta(
+                                  pergunta['id']); // Lógica de exclusão
+                            },
+                          ),
+                        ],
+                      ),
+                      onTap: () {
+                        // Ação ao tocar na pergunta
+                        // Exemplo: Navegar para detalhes ou expandir
+                      },
                     ),
                   );
                 },

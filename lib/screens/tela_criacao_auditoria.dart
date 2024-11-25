@@ -79,20 +79,50 @@ class _TelaCriacaoAuditoriaState extends State<TelaCriacaoAuditoria> {
                     borderRadius: BorderRadius.circular(20.0)),
               ),
             ),
-            DropdownButton<String>(
-              value: canalSelecionado,
-              items: <String>['Loja', 'VD'].map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  canalSelecionado = newValue!;
-                });
-                carregarPerguntasCanal(); // Carregar perguntas do canal selecionado
-              },
+            SizedBox(height: 10),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey),
+              ),
+              child: DropdownButton<String>(
+                value: canalSelecionado.isEmpty
+                    ? null
+                    : canalSelecionado, // Evita valor inicial vazio
+                hint: Text(
+                    'Selecione um canal'), // Texto quando nenhum valor é selecionado
+                items: <String>['Loja', 'VD'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Row(
+                      children: [
+                        Icon(
+                          value == 'Loja'
+                              ? Icons.store
+                              : Icons
+                                  .local_shipping, // Ícone diferenciado por canal
+                          color: Colors.blue,
+                        ),
+                        SizedBox(width: 5),
+                        Text(value),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    canalSelecionado = newValue!;
+                  });
+                  carregarPerguntasCanal();
+                },
+                underline: SizedBox(),
+                isExpanded:
+                    true, // Permite que o dropdown ocupe toda a largura disponível
+                icon: Icon(Icons.arrow_drop_down_circle,
+                    color: Colors.blue), // Ícone customizado para o dropdown
+              ),
             ),
             SizedBox(height: 10),
             CheckboxListTile(
