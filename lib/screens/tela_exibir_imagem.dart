@@ -5,7 +5,7 @@ class TelaExibirImagem extends StatelessWidget {
   final String caminhoImagem;
 
   TelaExibirImagem({required this.caminhoImagem});
-
+// alteração no arquivo para visualizar mais de uma imagem 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
