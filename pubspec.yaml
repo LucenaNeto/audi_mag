@@ -54,6 +54,7 @@ dev_dependencies:
   printing: ^5.13.4
   path_provider: ^2.1.5
   share_plus: ^10.1.2
+  intl: ^0.20.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

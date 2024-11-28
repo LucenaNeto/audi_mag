@@ -3,7 +3,7 @@ import 'package:audi_mag/db_helper.dart';
 import 'dart:io';
 import 'package:audi_mag/screens/tela_exibir_imagem.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:printing/printing.dart';
+//import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -23,58 +23,103 @@ class TelaVisualizarAuditoria extends StatefulWidget {
 }
 
 class RelatorioService {
-  Future<String> gerarRelatorioPDF(int auditoriaId) async {
-    // Inicia PDF
-    final conteudoAuditoria = await _obterConteudoAuditoria(auditoriaId);
-    final pdf = pw.Document();
-
-    // Conteudo do PDF
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        build: (context) => [
-          pw.Text('Relatorio da Auditoria $auditoriaId',
-              style: pw.TextStyle(fontSize: 24)),
-          pw.SizedBox(height: 20),
-          ...conteudoAuditoria,
-        ],
-      ),
-    );
-
-    // Salvar e visualizar o PDF
-    final output = await getTemporaryDirectory();
-    final filePath = "${output.path}/relatorio_auditoria_$auditoriaId.pdf";
-    final file = File(filePath);
-    await file.writeAsBytes(await pdf.save());
-
-    /*
-    await Printing.layoutPdf(
-      onLayout: (_) async => pdf.save(),
-    );
-    */
-    return filePath;
-  }
-
   Future<List<pw.Widget>> _obterConteudoAuditoria(int auditoriaId) async {
     final perguntasRespostas =
         await DBHelper().buscarPerguntasDaAuditoria(auditoriaId);
     List<pw.Widget> widgets = [];
 
     for (var item in perguntasRespostas) {
-      widgets.add(pw.Text("Pergunta: ${item['pergunta']}"));
-      widgets.add(pw.Text("Resposta: ${item['resposta']}"));
-      widgets.add(pw.Text("Observacao: ${item['observacao']}"));
-
-      if (item['imagem'] != null) {
-        final imageFile = File(item['imagem']);
-        final image = pw.MemoryImage(imageFile.readAsBytesSync());
-        widgets.add(pw.Image(image, width: 150, height: 150));
-      } else {
-        widgets.add(pw.Text('Imagem não encontrada'));
-      }
-      widgets.add(pw.SizedBox(height: 20));
+      widgets.add(
+        pw.Container(
+          margin: pw.EdgeInsets.only(bottom: 10),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text("Pergunta: ${item['pergunta']}",
+                  style: pw.TextStyle(
+                      fontSize: 16, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 5),
+              pw.Text("Resposta: ${item['resposta'] ?? 'Não respondido'}",
+                  style: pw.TextStyle(fontSize: 14)),
+              pw.SizedBox(height: 5),
+              pw.Text("Observação: ${item['observacao'] ?? 'Sem observação'}",
+                  style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
+              pw.SizedBox(height: 10),
+              item['imagem'] != null
+                  ? pw.Image(
+                      pw.MemoryImage(File(item['imagem']).readAsBytesSync()),
+                      width: 200,
+                      height: 150,
+                    )
+                  : pw.Text("Imagem não disponível",
+                      style: pw.TextStyle(
+                        fontSize: 12,
+                        color: PdfColors.redAccent,
+                        fontStyle: pw.FontStyle.italic,
+                      )),
+              pw.Divider(thickness: 0.5, color: PdfColors.grey400),
+            ],
+          ),
+        ),
+      );
     }
     return widgets;
+  }
+
+  Future<String> gerarRelatorioPDF(
+      int auditoriaId, String nomeAuditoria) async {
+    final conteudoAuditoria = await _obterConteudoAuditoria(auditoriaId);
+    final pdf = pw.Document();
+
+    // Cabeçalho aprimorado e numeração de páginas
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (context) => [
+          pw.Header(
+            level: 0,
+            child: pw.Text(
+              'Relatório da Auditoria',
+              style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+          pw.Text(
+            'Nome da Auditoria: $nomeAuditoria',
+            style: pw.TextStyle(fontSize: 18),
+          ),
+          pw.Text(
+            'Data: ${DateTime.now().toLocal().toString().split(" ")[0]}',
+            style: pw.TextStyle(fontSize: 14, color: PdfColors.grey700),
+          ),
+          pw.SizedBox(height: 20),
+          pw.Text('Detalhes:',
+              style:
+                  pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+          pw.Divider(thickness: 1, color: PdfColors.black),
+          ...conteudoAuditoria,
+        ],
+        footer: (context) {
+          final currentPage = context.pageNumber;
+          final totalPages = context.pagesCount;
+
+          return pw.Container(
+            alignment: pw.Alignment.centerRight,
+            margin: pw.EdgeInsets.only(top: 20),
+            child: pw.Text(
+              "Página $currentPage de $totalPages",
+              style: pw.TextStyle(fontSize: 12, color: PdfColors.grey),
+            ),
+          );
+        },
+      ),
+    );
+
+    // Salvar o PDF
+    final output = await getTemporaryDirectory();
+    final filePath = "${output.path}/relatorio_auditoria_$auditoriaId.pdf";
+    final file = File(filePath);
+    await file.writeAsBytes(await pdf.save());
+    return filePath;
   }
 }
 
@@ -220,8 +265,8 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
             onPressed: () async {
               try {
                 // Retorio e obtém o caminho do arquivo
-                final filePath = await RelatorioService()
-                    .gerarRelatorioPDF(widget.auditoriaId);
+                final filePath = await RelatorioService().gerarRelatorioPDF(
+                    widget.auditoriaId, widget.nomeAuditoria);
                 final file = File(filePath);
 
                 // Verifica se o arquivo existe

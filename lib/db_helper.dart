@@ -119,6 +119,20 @@ class DBHelper {
     );
   }
 
+  Future<Map<String, dynamic>> buscarAuditoriaPorId(int id) async {
+    final db = await database;
+    final result = await db.query(
+      'auditorias',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (result.isNotEmpty) {
+      throw Exception('Auditoria não encontrada pelo ID: $id');
+    }
+    return {};
+  }
+
   // Métodos para  perguntas padrão a auditorias
   Future<void> adicionarPerguntasSelecionadasAAuditoria(
       int auditoriaId, List<int> perguntaIds) async {
