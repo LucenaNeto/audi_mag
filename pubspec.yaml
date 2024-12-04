@@ -55,6 +55,7 @@ dev_dependencies:
   path_provider: ^2.1.5
   share_plus: ^10.1.2
   intl: ^0.20.1
+  file_picker: ^8.1.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -63,6 +64,7 @@ dev_dependencies:
 flutter:
   assets:
   - assets/images/logo.png
+  - assets/images/logo3_verde.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

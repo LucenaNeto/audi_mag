@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:audi_mag/db_helper.dart';
+import 'package:file_picker/file_picker.dart';
 
 class TelaGerenciarPerguntas extends StatefulWidget {
   @override
@@ -9,13 +12,13 @@ class TelaGerenciarPerguntas extends StatefulWidget {
 class _TelaGerenciarPerguntasState extends State<TelaGerenciarPerguntas> {
   final TextEditingController perguntaController = TextEditingController();
   final TextEditingController observacaoController = TextEditingController();
-  String canalSelecionado = 'Loja'; // inicio do canal
+  String canalSelecionado = 'Loja';
   List<Map<String, dynamic>> perguntas = [];
 
   @override
   void initState() {
     super.initState();
-    carregarPerguntas(); // Carrega as perguntas ao iniciar a tela
+    carregarPerguntas();
   }
 
   Future<void> carregarPerguntas() async {
@@ -25,17 +28,52 @@ class _TelaGerenciarPerguntasState extends State<TelaGerenciarPerguntas> {
       perguntas = data;
     });
   }
-/*
-  Future<void> salvarPerguntaPadrao() async {
-    await DBHelper().salvarPerguntaPadrao(
-      perguntaController.text,
-      observacaoController.text,
-    );
-    perguntaController.clear();
-    observacaoController.clear();
-    carregarPerguntas(); // Recarrega as perguntas após salvar
+
+  Future<void> importarPerguntas() async {
+    try {
+      // Seleciona o arquivo .txt
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['txt'], // Apenas arquivos .txt
+      );
+
+      if (result != null) {
+        final file = File(result.files.single.path!);
+        final lines = await file.readAsLines();
+
+        // Processa cada linha como uma pergunta
+        for (String line in lines) {
+          if (line.trim().isEmpty) continue; // Ignora linhas em branco
+
+          final parts = line.split('|');
+          final pergunta = parts[0].trim();
+          final observacao = parts.length > 1 ? parts[1].trim() : '';
+          final canal = parts.length > 2 && parts[2].trim().isNotEmpty
+              ? parts[2].trim()
+              : 'Loja'; // Canal padrão
+
+          // Salva a pergunta no banco de dados
+          await DBHelper().salvarPerguntaPadrao(
+            pergunta,
+            observacao,
+            canal,
+          );
+        }
+
+        // Atualiza a lista de perguntas após importar
+        carregarPerguntas();
+
+        // Mostra mensagem de sucesso
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Perguntas importadas com sucesso!')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao importar perguntas: $e')),
+      );
+    }
   }
-  */
 
   Future<void> editarPergunta(
       int id, String novaPergunta, String novaObservacao) async {
@@ -170,31 +208,40 @@ class _TelaGerenciarPerguntasState extends State<TelaGerenciarPerguntas> {
               ),
             ),
             SizedBox(height: 5),
-            ElevatedButton(
-              onPressed: () async {
-                if (perguntaController.text.isNotEmpty) {
-                  await DBHelper().salvarPerguntaPadrao(
-                    perguntaController.text,
-                    observacaoController.text,
-                    canalSelecionado,
-                  );
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: () async {
+                    if (perguntaController.text.isNotEmpty) {
+                      await DBHelper().salvarPerguntaPadrao(
+                        perguntaController.text,
+                        observacaoController.text,
+                        canalSelecionado,
+                      );
 
-                  // Limpa os campos de entrada após salvar
-                  perguntaController.clear();
-                  observacaoController.clear();
+                      perguntaController.clear();
+                      observacaoController.clear();
+                      carregarPerguntas();
 
-                  // Exibe uma mensagem de confirmação
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Pergunta salva com sucesso!')),
-                  );
-                } else {
-                  // Exibe uma mensagem de erro se o campo de pergunta estiver vazio
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('A pergunta não pode estar vazia')),
-                  );
-                }
-              },
-              child: Text('Salvar Pergunta'),
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Pergunta salva com sucesso!')),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('A pergunta não pode estar vazia')),
+                      );
+                    }
+                  },
+                  child: Text('Salvar Pergunta'),
+                ),
+                ElevatedButton.icon(
+                  onPressed: importarPerguntas,
+                  icon: Icon(Icons.upload_file),
+                  label: Text('Importar Perguntas'),
+                ),
+              ],
             ),
             Expanded(
               child: ListView.builder(
