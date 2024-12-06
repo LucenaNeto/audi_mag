@@ -29,6 +29,7 @@ class RelatorioService {
     List<pw.Widget> widgets = [];
 
     for (var item in perguntasRespostas) {
+      // Adiciona texto e informações principais da pergunta
       widgets.add(
         pw.Container(
           margin: pw.EdgeInsets.only(bottom: 10),
@@ -45,25 +46,158 @@ class RelatorioService {
               pw.Text("Observação: ${item['observacao'] ?? 'Sem observação'}",
                   style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
               pw.SizedBox(height: 10),
-              item['imagem'] != null
-                  ? pw.Image(
-                      pw.MemoryImage(File(item['imagem']).readAsBytesSync()),
-                      width: 200,
-                      height: 150,
-                    )
-                  : pw.Text("Imagem não disponível",
-                      style: pw.TextStyle(
-                        fontSize: 12,
-                        color: PdfColors.redAccent,
-                        fontStyle: pw.FontStyle.italic,
-                      )),
-              pw.Divider(thickness: 0.5, color: PdfColors.grey400),
             ],
           ),
         ),
       );
+
+      // Busca imagens associadas à pergunta
+      final imagens = await DBHelper().buscarImagensPorPergunta(item['id']);
+      if (imagens.isNotEmpty) {
+        widgets.add(
+          pw.Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: imagens.map((imagem) {
+              return pw.Container(
+                margin: pw.EdgeInsets.only(bottom: 10),
+                child: pw.Image(
+                  pw.MemoryImage(File(imagem['caminho']).readAsBytesSync()),
+                  width: 200,
+                  height: 150,
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      } else {
+        widgets.add(
+          pw.Text("Imagens não disponíveis",
+              style: pw.TextStyle(
+                fontSize: 12,
+                color: PdfColors.redAccent,
+                fontStyle: pw.FontStyle.italic,
+              )),
+        );
+      }
+
+      widgets.add(pw.Divider(thickness: 0.5, color: PdfColors.grey400));
     }
     return widgets;
+  }
+
+  Future<List<pw.Widget>> _obterConteudoEspecifico(int auditoriaId) async {
+    final perguntasComNao =
+        await DBHelper().buscarPerguntasDaAuditoria(auditoriaId);
+    List<pw.Widget> widgets = [];
+
+    for (var item in perguntasComNao) {
+      if (item['resposta'] == 'Não') {
+        // Adiciona texto e informações principais da pergunta
+        widgets.add(
+          pw.Container(
+            margin: pw.EdgeInsets.only(bottom: 10),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text("Pergunta: ${item['pergunta']}",
+                    style: pw.TextStyle(
+                        fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 5),
+                pw.Text("Observação: ${item['observacao'] ?? 'Sem observação'}",
+                    style:
+                        pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
+                pw.SizedBox(height: 10),
+              ],
+            ),
+          ),
+        );
+
+        // Busca as imagens associadas à pergunta
+        final imagens = await DBHelper().buscarImagensPorPergunta(item['id']);
+        if (imagens.isNotEmpty) {
+          // Adiciona as imagens ao relatório
+          widgets.add(
+            pw.Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: imagens.map((imagem) {
+                return pw.Container(
+                  margin: pw.EdgeInsets.only(bottom: 10),
+                  child: pw.Image(
+                    pw.MemoryImage(File(imagem['caminho']).readAsBytesSync()),
+                    width: 200,
+                    height: 150,
+                  ),
+                );
+              }).toList(),
+            ),
+          );
+        } else {
+          widgets.add(
+            pw.Text("Imagens não disponíveis",
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  color: PdfColors.redAccent,
+                  fontStyle: pw.FontStyle.italic,
+                )),
+          );
+        }
+
+        widgets.add(pw.Divider(thickness: 0.5, color: PdfColors.grey400));
+      }
+    }
+    return widgets;
+  }
+
+  Future<String> gerarRelatorioEspecificoPDF(
+      int auditoriaId, String nomeAuditoria) async {
+    final conteudoEspecifico = await _obterConteudoEspecifico(auditoriaId);
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (context) => [
+          pw.Header(
+            level: 0,
+            child: pw.Text(
+              'Relatório Específico - Respostas "Não"',
+              style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+          pw.Text(
+            'Nome da Auditoria: $nomeAuditoria',
+            style: pw.TextStyle(fontSize: 18),
+          ),
+          pw.Text(
+            'Data: ${DateTime.now().toLocal().toString().split(" ")[0]}',
+            style: pw.TextStyle(fontSize: 14, color: PdfColors.grey700),
+          ),
+          pw.SizedBox(height: 20),
+          ...conteudoEspecifico,
+        ],
+        footer: (context) {
+          final currentPage = context.pageNumber;
+          final totalPages = context.pagesCount;
+
+          return pw.Container(
+            alignment: pw.Alignment.centerRight,
+            margin: pw.EdgeInsets.only(top: 20),
+            child: pw.Text(
+              "Página $currentPage de $totalPages",
+              style: pw.TextStyle(fontSize: 12, color: PdfColors.grey),
+            ),
+          );
+        },
+      ),
+    );
+
+    final output = await getTemporaryDirectory();
+    final filePath = "${output.path}/relatorio_especifico_$auditoriaId.pdf";
+    final file = File(filePath);
+    await file.writeAsBytes(await pdf.save());
+    return filePath;
   }
 
   Future<String> gerarRelatorioPDF(
@@ -195,49 +329,37 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
 
   Future<void> _anexarImagem(int perguntaId) async {
     try {
-      // possibilidade de escolher entrer ir para câmera ou abrir a galeria.
-      showDialog(
+      // Mostra um diálogo para o usuário escolher entre câmera ou galeria
+      await showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text('Selecionar Imagem'),
-            content: Text('Escolha Uma opção:'),
+            content: Text('Escolha uma opção:'),
             actions: [
               TextButton(
                 child: Text('Câmera'),
                 onPressed: () async {
-                  Navigator.of(context).pop(); //Fecha o dialogo com o usuario.
-                  final PickedFile =
+                  Navigator.of(context).pop(); // Fecha o diálogo
+                  final pickedFile =
                       await _picker.pickImage(source: ImageSource.camera);
-                  if (PickedFile != null) {
-                    final db = await DBHelper().database;
-                    await db.update(
-                      'perguntas',
-                      {'imagem': PickedFile.path},
-                      where: 'id = ?',
-                      whereArgs: [perguntaId],
-                    );
-                    _carregarPerguntas();
+                  if (pickedFile != null) {
+                    await DBHelper()
+                        .salvarImagemParaPergunta(perguntaId, pickedFile.path);
+                    setState(() {}); // Atualiza a UI
                   }
                 },
               ),
               TextButton(
                 child: Text('Galeria'),
                 onPressed: () async {
-                  Navigator.of(context).pop(); // Fecha o dialogo
+                  Navigator.of(context).pop(); // Fecha o diálogo
                   final pickedFile =
                       await _picker.pickImage(source: ImageSource.gallery);
                   if (pickedFile != null) {
-                    final db = await DBHelper().database;
-                    await db.update(
-                      'perguntas',
-                      {
-                        'imagem': pickedFile.path
-                      }, // Salva o caminho da imagem no BD
-                      where: 'id = ?',
-                      whereArgs: [perguntaId],
-                    );
-                    _carregarPerguntas(); // Recarrega para exibir a imagem
+                    await DBHelper()
+                        .salvarImagemParaPergunta(perguntaId, pickedFile.path);
+                    setState(() {}); // Atualiza a UI
                   }
                 },
               ),
@@ -250,6 +372,49 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
     }
   }
 
+  Widget _exibirImagens(int perguntaId) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: DBHelper().buscarImagensPorPergunta(perguntaId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError || snapshot.data == null) {
+          return Text('Erro ao carregar Imagens');
+        } else if (snapshot.data!.isEmpty) {
+          return Text('Nenhuma Imagem anexada');
+        } else {
+          return Wrap(
+            spacing: 8.0,
+            runSpacing: 8.0,
+            children: snapshot.data!.map((imagem) {
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TelaExibirImagem(
+                        caminhoImagem: imagem['caminho'],
+                      ),
+                    ),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: Image.file(
+                    File(imagem['caminho']),
+                    height: 100,
+                    width: 100,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              );
+            }).toList(),
+          );
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -260,16 +425,39 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.share),
-            tooltip: 'Compartilhar relatório',
+            icon: Icon(Icons.picture_as_pdf),
+            tooltip: 'Relatório Geral',
             onPressed: () async {
               try {
-                // Retorio e obtém o caminho do arquivo
                 final filePath = await RelatorioService().gerarRelatorioPDF(
                     widget.auditoriaId, widget.nomeAuditoria);
                 final file = File(filePath);
 
-                // Verifica se o arquivo existe
+                if (file.existsSync()) {
+                  Share.shareXFiles(
+                    [XFile(filePath, mimeType: 'application/pdf')],
+                  );
+                } else {
+                  _exibirMensagemErro(
+                      context, "Erro ao localizar o relatório gerado.");
+                }
+              } catch (e) {
+                print("Erro ao compartilhar arquivo: $e");
+                _exibirMensagemErro(
+                    context, "Erro inesperado ao compartilhar o relatório.");
+              }
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.filter_alt),
+            tooltip: 'Relatório Específico (Respostas "Não")',
+            onPressed: () async {
+              try {
+                final filePath = await RelatorioService()
+                    .gerarRelatorioEspecificoPDF(
+                        widget.auditoriaId, widget.nomeAuditoria);
+                final file = File(filePath);
+
                 if (file.existsSync()) {
                   Share.shareXFiles(
                     [XFile(filePath, mimeType: 'application/pdf')],
@@ -317,30 +505,7 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
                   SizedBox(height: 8),
                   Text(pergunta['observacao'] ?? ''),
                   SizedBox(height: 10),
-                  // exibe imagem se ouver
-                  pergunta['imagem'] != null
-                      ? GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => TelaExibirImagem(
-                                  caminhoImagem: pergunta['imagem'],
-                                ),
-                              ),
-                            );
-                          },
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8.0),
-                            child: Image.file(
-                              File(pergunta['imagem']),
-                              height: 100,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        )
-                      : Container(),
+                  _exibirImagens(pergunta['id']),
                   SizedBox(height: 10),
                   Column(
                     children: [

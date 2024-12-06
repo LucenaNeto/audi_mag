@@ -18,7 +18,7 @@ class DBHelper {
     String path = join(await getDatabasesPath(), 'auditoria.db');
     return await openDatabase(
       path,
-      version: 5, // Versão do banco atualizada para 5
+      version: 8,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE auditorias (
@@ -49,6 +49,14 @@ class DBHelper {
             canal TEXT
           )
         ''');
+        await db.execute('''
+          CREATE TABLE imagens_perguntas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            perguntaId INTEGER,
+            caminho TEXT,
+            FOREIGN KEY (perguntaId) REFERENCES pergunta(id)
+          )
+        ''');
       },
       onUpgrade: _onUpgrade, // Chamando o método onUpgrade
     );
@@ -63,6 +71,33 @@ class DBHelper {
       // Adiciona coluna 'canal' na tabela 'perguntas_padrao'
       await db.execute('ALTER TABLE perguntas_padrao ADD COLUMN canal TEXT');
     }
+    if (oldVersion < 6) {
+      // Cria a tabela 'imagens_perguntas'
+      await db.execute('''
+      CREATE TABLE imagens_perguntas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        perguntaId INTEGER,
+        caminho TEXT,
+        FOREIGN KEY (perguntaId) REFERENCES perguntas(id)
+      )
+    ''');
+    }
+  }
+
+  Future<int> salvarImagemParaPergunta(int perguntaId, String caminho) async {
+    final db = await database;
+    return await db.insert('imagens_perguntas', {
+      'perguntaId': perguntaId,
+      'caminho': caminho,
+    });
+  }
+
+  Future<int> salvarImagem(int perguntaId, String caminho) async {
+    final db = await database;
+    return await db.insert('imagens', {
+      'perguntaId': perguntaId,
+      'caminho': caminho,
+    });
   }
 
   // Métodos para manipular auditorias
@@ -181,6 +216,15 @@ class DBHelper {
     );
   }
 
+  Future<int> excluirImagensPorPergunta(int perguntId) async {
+    final db = await database;
+    return await db.delete(
+      'imagens_perguntas',
+      where: 'perguntaId = ?',
+      whereArgs: [perguntId],
+    );
+  }
+
   // nova função de divisão de vd e loja
   Future<List<Map<String, dynamic>>> buscarPerguntasPorCanal(
       String canal) async {
@@ -189,6 +233,16 @@ class DBHelper {
       'perguntas_padrao',
       where: 'canal = ?',
       whereArgs: [canal],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> buscarImagensPorPergunta(
+      int perguntaId) async {
+    final db = await database;
+    return await db.query(
+      'imagens_perguntas',
+      where: 'perguntaId = ?',
+      whereArgs: [perguntaId],
     );
   }
 }

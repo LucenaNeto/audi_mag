@@ -65,7 +65,10 @@ class _TelaGerenciarPerguntasState extends State<TelaGerenciarPerguntas> {
 
         // Mostra mensagem de sucesso
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Perguntas importadas com sucesso!')),
+          SnackBar(
+            content: Text('Perguntas importadas com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
