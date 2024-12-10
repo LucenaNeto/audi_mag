@@ -415,6 +415,39 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
     );
   }
 
+  Widget _buildRadioOption(
+    String title,
+    String value,
+    int perguntaId,
+    String? respostaAtual,
+    void Function(String?) atualizarResposta,
+  ) {
+    return RadioListTile<String>(
+      title: Text(title),
+      value: value,
+      groupValue: respostaAtual,
+      onChanged: (String? newValue) {
+        final respostaAnterior = respostaAtual;
+
+        atualizarResposta(newValue);
+
+        Future.microtask(() async {
+          try {
+            await _salvarResposta(perguntaId, newValue!);
+          } catch (e) {
+            // Reverte a alteração se falhar
+            atualizarResposta(respostaAnterior);
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text('Erro ao salvar resposta. Tente novamente.')),
+            );
+          }
+        });
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -484,7 +517,6 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
           String? resposta = pergunta['resposta'];
 
           return Card(
-            // Adição do Card para melhorar o layout
             margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
             elevation: 4.0,
             shape: RoundedRectangleBorder(
@@ -509,47 +541,42 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
                   SizedBox(height: 10),
                   Column(
                     children: [
-                      RadioListTile<String>(
-                        title: const Text('Sim'),
-                        value: 'Sim',
-                        groupValue: resposta,
-                        onChanged: (String? value) {
+                      _buildRadioOption(
+                        'Sim',
+                        'Sim',
+                        pergunta['id'],
+                        resposta,
+                        (novaResposta) {
                           setState(() {
-                            resposta = value;
+                            resposta = novaResposta;
                           });
-                          Future.microtask(
-                              () => _salvarResposta(pergunta['id'], value!));
                         },
                       ),
-                      RadioListTile<String>(
-                        title: const Text('Não'),
-                        value: 'Não',
-                        groupValue: resposta,
-                        onChanged: (String? value) {
+                      _buildRadioOption(
+                        'Não',
+                        'Não',
+                        pergunta['id'],
+                        resposta,
+                        (novaResposta) {
                           setState(() {
-                            resposta = value;
+                            resposta = novaResposta;
                           });
-                          Future.microtask(
-                              () => _salvarResposta(pergunta['id'], value!));
                         },
                       ),
-                      RadioListTile<String>(
-                        title: const Text('Não se aplica'),
-                        value: 'Não se aplica',
-                        groupValue: resposta,
-                        onChanged: (String? value) {
+                      _buildRadioOption(
+                        'Não se aplica',
+                        'Não se aplica',
+                        pergunta['id'],
+                        resposta,
+                        (novaResposta) {
                           setState(() {
-                            resposta = value;
+                            resposta = novaResposta;
                           });
-                          Future.microtask(
-                              () => _salvarResposta(pergunta['id'], value!));
                         },
                       ),
                     ],
                   ),
                   SizedBox(height: 10),
-
-                  // Botão para anexar imagem
                   ElevatedButton(
                     onPressed: () {
                       _anexarImagem(pergunta['id']);
@@ -557,7 +584,6 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
                     child: Text('Anexar Imagem'),
                   ),
                   SizedBox(height: 10),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
