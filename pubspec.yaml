@@ -56,7 +56,7 @@ dev_dependencies:
   share_plus: ^10.1.2
   intl: ^0.20.1
   file_picker: ^8.1.4
-  flutter_launcher_icons: ^0.14.2
+  
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -67,10 +67,7 @@ flutter:
   - assets/images/logo.png
   - assets/images/logo3_verde.png
 
-flutter_icons:
-  android: true
-  ios: true
-  image_path: "assets/images/icone_verde_azul_nome.png"
+
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

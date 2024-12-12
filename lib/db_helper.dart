@@ -245,4 +245,18 @@ class DBHelper {
       whereArgs: [perguntaId],
     );
   }
+
+  Future<Map<String ,dynamic>> exportarDados() async {
+    final db = await database;
+
+    final auditorias = await db.query('auditorias');
+    final perguntas = await db.query('perguntas');
+    final imagens = await db.query('imagens_perguntas');
+
+    return {
+      'auditorias': auditorias,
+      'perguntas': perguntas,
+      'imagens':imagens,
+    };
+  }
 }

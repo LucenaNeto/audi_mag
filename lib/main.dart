@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:audi_mag/db_helper.dart';
 import 'package:audi_mag/screens/tela_criacao_auditoria.dart';
 import 'package:audi_mag/screens/tela_gerenciar_perguntas.dart';
 import 'package:audi_mag/screens/tela_lista_auditoria.dart';
@@ -17,6 +21,31 @@ class AuditoriaApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home: TelaSplash(),
+    );
+  }
+}
+
+// Função para criar o backup
+Future<void> criarBackup(BuildContext context) async {
+  try {
+    // Exporta os dados do banco
+    final dados = await DBHelper().exportarDados();
+
+    // Define o diretório para salvar o backup
+    final directory = await getApplicationDocumentsDirectory();
+    final backupFile = File('${directory.path}/backup_auditoria.json');
+
+    // Salva os dados em formato JSON
+    await backupFile.writeAsString(jsonEncode(dados));
+
+    // Exibe mensagem de sucesso
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Backup criado com sucesso em ${backupFile.path}')),
+    );
+  } catch (e) {
+    // Exibe mensagem de erro
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erro ao criar backup: $e')),
     );
   }
 }
@@ -90,6 +119,16 @@ class TelaInicial extends StatelessWidget {
                       );
                     },
                   ),
+                  // Botão para criar backup
+                  _buildMenuOption(
+                    context,
+                    title: 'Criar Backup',
+                    icon: Icons.backup,
+                    color: Colors.purple,
+                    onTap: () async {
+                      await criarBackup(context); // Chama a função de backup
+                    },
+                  ),
                 ],
               ),
             ),
@@ -99,6 +138,7 @@ class TelaInicial extends StatelessWidget {
     );
   }
 
+  // Método para criar um item do menu
   Widget _buildMenuOption(BuildContext context,
       {required String title,
       required IconData icon,
