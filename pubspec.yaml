@@ -64,6 +64,7 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   assets:
+  - assets/images/logo4.png
   - assets/images/logo.png
   - assets/images/logo3_verde.png
 

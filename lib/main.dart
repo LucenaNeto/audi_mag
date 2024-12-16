@@ -7,7 +7,7 @@ import 'package:audi_mag/screens/tela_gerenciar_perguntas.dart';
 import 'package:audi_mag/screens/tela_lista_auditoria.dart';
 import 'package:audi_mag/screens/tela_splash.dart';
 import 'package:flutter/material.dart';
-
+import 'package:audi_mag/screens/tela_Backup.dart';
 void main() {
   runApp(AuditoriaApp());
 }
@@ -25,7 +25,7 @@ class AuditoriaApp extends StatelessWidget {
   }
 }
 
-// Função para criar o backup
+
 Future<void> criarBackup(BuildContext context) async {
   try {
     // Exporta os dados do banco
@@ -50,6 +50,18 @@ Future<void> criarBackup(BuildContext context) async {
   }
 }
 
+Future<List<FileSystemEntity>> listarBackups() async {
+  final directory = await getApplicationDocumentsDirectory();
+  final backupDir = Directory(directory.path);
+
+  // Filtra arquivos JSON (backups)
+  final backups = backupDir.listSync().where((file) {
+    return file.path.endsWith('.json');
+  }).toList();
+
+  return backups;
+}
+
 class TelaInicial extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -62,103 +74,91 @@ class TelaInicial extends StatelessWidget {
         centerTitle: true,
         backgroundColor: const Color.fromARGB(132, 10, 66, 34),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
-            // Adiciona a logo no topo
-            Center(
-              child: Image.asset(
-                'assets/images/logo.png',
-                height: 500,
-                fit: BoxFit.contain,
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(132, 10, 66, 34),
+              ),
+              child: Center(
+                child: Column(
+                  children: [
+                    Image.asset(
+                      'assets/images/logo4.png',
+                      height: 90,
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Menu+',
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                  ],
+                ),
               ),
             ),
-            SizedBox(height: 40),
-            // Botões estilizados como cartões
-            Expanded(
-              child: ListView(
-                children: [
-                  _buildMenuOption(
-                    context,
-                    title: 'Criar Nova Auditoria',
-                    icon: Icons.add_chart_outlined,
-                    color: Colors.green,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => TelaCriacaoAuditoria()),
-                      );
-                    },
-                  ),
-                  _buildMenuOption(
-                    context,
-                    title: 'Ver Auditorias Salvas',
-                    icon: Icons.folder_open_outlined,
-                    color: Colors.blue,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => TelaListaAuditorias()),
-                      );
-                    },
-                  ),
-                  _buildMenuOption(
-                    context,
-                    title: 'Gerenciar Perguntas',
-                    icon: Icons.settings_suggest_outlined,
-                    color: Colors.orange,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => TelaGerenciarPerguntas()),
-                      );
-                    },
-                  ),
-                  // Botão para criar backup
-                  _buildMenuOption(
-                    context,
-                    title: 'Criar Backup',
-                    icon: Icons.backup,
-                    color: Colors.purple,
-                    onTap: () async {
-                      await criarBackup(context); // Chama a função de backup
-                    },
-                  ),
-                ],
+            _buildDrawerItem(
+              context,
+              title: 'Criar Nova Auditoria',
+              icon: Icons.add_chart_outlined,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => TelaCriacaoAuditoria()),
+              ),
+            ),
+            _buildDrawerItem(
+              context,
+              title: 'Ver Auditorias Salvas',
+              icon: Icons.folder_open_outlined,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => TelaListaAuditorias()),
+              ),
+            ),
+            _buildDrawerItem(
+              context,
+              title: 'Gerenciar Perguntas',
+              icon: Icons.settings_suggest_outlined,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => TelaGerenciarPerguntas()),
+              ),
+            ),
+            _buildDrawerItem(
+              context,
+              title: 'Criar Backup',
+              icon: Icons.backup,
+              onTap: () async => await criarBackup(context),
+            ),
+            _buildDrawerItem(
+              context,
+              title: 'Ver Backups',
+              icon: Icons.folder,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => TelaBackups()),
               ),
             ),
           ],
         ),
       ),
+      body: Center(
+        child: Image.asset(
+          'assets/images/logo.png',
+          height: 450,
+        ),
+      ),
     );
   }
 
-  // Método para criar um item do menu
-  Widget _buildMenuOption(BuildContext context,
-      {required String title,
-      required IconData icon,
-      required Color color,
-      required VoidCallback onTap}) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withOpacity(0.2),
-          child: Icon(icon, color: color),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        trailing: Icon(Icons.arrow_forward_ios, color: Colors.grey),
-        onTap: onTap,
-      ),
+  Widget _buildDrawerItem(BuildContext context,
+      {required String title, required IconData icon, required VoidCallback onTap}) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      onTap: onTap,
     );
   }
 }
