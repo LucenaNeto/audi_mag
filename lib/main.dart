@@ -1,7 +1,13 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:audi_mag/db_helper.dart';
 import 'package:audi_mag/screens/tela_criacao_auditoria.dart';
+import 'package:audi_mag/screens/tela_gerenciar_perguntas.dart';
 import 'package:audi_mag/screens/tela_lista_auditoria.dart';
+import 'package:audi_mag/screens/tela_splash.dart';
 import 'package:flutter/material.dart';
-
+import 'package:audi_mag/screens/tela_Backup.dart';
 void main() {
   runApp(AuditoriaApp());
 }
@@ -14,9 +20,46 @@ class AuditoriaApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: TelaInicial(),
+      home: TelaSplash(),
     );
   }
+}
+
+
+Future<void> criarBackup(BuildContext context) async {
+  try {
+    // Exporta os dados do banco
+    final dados = await DBHelper().exportarDados();
+
+    // Define o diretório para salvar o backup
+    final directory = await getApplicationDocumentsDirectory();
+    final backupFile = File('${directory.path}/backup_auditoria.json');
+
+    // Salva os dados em formato JSON
+    await backupFile.writeAsString(jsonEncode(dados));
+
+    // Exibe mensagem de sucesso
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Backup criado com sucesso em ${backupFile.path}')),
+    );
+  } catch (e) {
+    // Exibe mensagem de erro
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erro ao criar backup: $e')),
+    );
+  }
+}
+
+Future<List<FileSystemEntity>> listarBackups() async {
+  final directory = await getApplicationDocumentsDirectory();
+  final backupDir = Directory(directory.path);
+
+  // Filtra arquivos JSON (backups)
+  final backups = backupDir.listSync().where((file) {
+    return file.path.endsWith('.json');
+  }).toList();
+
+  return backups;
 }
 
 class TelaInicial extends StatelessWidget {
@@ -25,56 +68,97 @@ class TelaInicial extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Gerenciamento de Auditoria',
+          'Audi+',
           style: TextStyle(fontSize: 24, color: Colors.white),
         ),
         centerTitle: true,
         backgroundColor: const Color.fromARGB(132, 10, 66, 34),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
-            /*
-            Center(
-              child: Text(
-                'App de Auditoria',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(132, 10, 66, 34),
               ),
-            ),*/
-            SizedBox(height: 40),
-            Center(
-              child: Image.asset('assets/images/logo.png'), // Logo da empresa
+              child: Center(
+                child: Column(
+                  children: [
+                    Image.asset(
+                      'assets/images/logo4.png',
+                      height: 90,
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Menu+',
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: () {
-                // Navegar para a tela de criação de auditoria
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => TelaCriacaoAuditoria()),
-                );
-              },
-              child: Text('Criar Nova Auditoria'),
+            _buildDrawerItem(
+              context,
+              title: 'Criar Nova Auditoria',
+              icon: Icons.add_chart_outlined,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => TelaCriacaoAuditoria()),
+              ),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                // Navegar para a tela de auditorias salvas
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => TelaListaAuditorias()),
-                );
-              },
-              child: Text('Ver Auditorias Salvas'),
+            _buildDrawerItem(
+              context,
+              title: 'Ver Auditorias Salvas',
+              icon: Icons.folder_open_outlined,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => TelaListaAuditorias()),
+              ),
+            ),
+            _buildDrawerItem(
+              context,
+              title: 'Gerenciar Perguntas',
+              icon: Icons.settings_suggest_outlined,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => TelaGerenciarPerguntas()),
+              ),
+            ),
+            _buildDrawerItem(
+              context,
+              title: 'Criar Backup',
+              icon: Icons.backup,
+              onTap: () async => await criarBackup(context),
+            ),
+            _buildDrawerItem(
+              context,
+              title: 'Ver Backups',
+              icon: Icons.folder,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => TelaBackups()),
+              ),
             ),
           ],
         ),
       ),
+      body: Center(
+        child: Image.asset(
+          'assets/images/logo.png',
+          height: 450,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(BuildContext context,
+      {required String title, required IconData icon, required VoidCallback onTap}) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      onTap: onTap,
     );
   }
 }
