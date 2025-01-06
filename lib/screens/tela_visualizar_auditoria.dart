@@ -1,3 +1,5 @@
+import 'package:audi_mag/main.dart';
+import 'package:audi_mag/screens/tela_pdf.dart';
 import 'package:flutter/material.dart';
 import 'package:audi_mag/db_helper.dart';
 import 'dart:io';
@@ -506,6 +508,21 @@ class _TelaVisualizarAuditoriaState extends State<TelaVisualizarAuditoria> {
               }
             },
           ),
+          IconButton(
+            icon: Icon(Icons.sticky_note_2),
+            tooltip: 'Colinha',
+            onPressed: () async {
+              final pdfPath = await selecionarPDF(context);
+              if (pdfPath != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TelaVisualizarPDF(caminhoPDF: pdfPath),
+                    ),
+                );
+              }
+            },
+          )
         ],
         centerTitle: false,
         backgroundColor: const Color.fromARGB(132, 10, 66, 34),

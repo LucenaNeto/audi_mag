@@ -56,7 +56,11 @@ class _TelaBackupsState extends State<TelaBackups> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Backups Criados'),
+        title: Text(
+          'Backups Criados',
+          style: TextStyle(fontSize: 22, color: Colors.white),
+          ),
+          centerTitle: true,
         backgroundColor: const Color.fromARGB(132, 10, 66, 34),
       ),
       body: backups.isEmpty

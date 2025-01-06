@@ -8,6 +8,11 @@ import 'package:audi_mag/screens/tela_lista_auditoria.dart';
 import 'package:audi_mag/screens/tela_splash.dart';
 import 'package:flutter/material.dart';
 import 'package:audi_mag/screens/tela_Backup.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:audi_mag/screens/tela_pdf.dart';
+
+
+
 void main() {
   runApp(AuditoriaApp());
 }
@@ -54,12 +59,34 @@ Future<List<FileSystemEntity>> listarBackups() async {
   final directory = await getApplicationDocumentsDirectory();
   final backupDir = Directory(directory.path);
 
-  // Filtra arquivos JSON (backups)
+
   final backups = backupDir.listSync().where((file) {
     return file.path.endsWith('.json');
   }).toList();
 
   return backups;
+}
+
+Future<String?> selecionarPDF(BuildContext context) async {
+  try {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    if (result != null && result.files.single.path != null) {
+      return result.files.single.path!;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Nenhum arquivo selecionado.')),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erro ao selecionar arquivo: $e')),
+    );
+  }
+  return null;
 }
 
 class TelaInicial extends StatelessWidget {
@@ -87,7 +114,7 @@ class TelaInicial extends StatelessWidget {
                   children: [
                     Image.asset(
                       'assets/images/logo4.png',
-                      height: 90,
+                      height: 93,
                     ),
                     SizedBox(height: 10),
                     Text(
@@ -141,6 +168,20 @@ class TelaInicial extends StatelessWidget {
                 MaterialPageRoute(builder: (context) => TelaBackups()),
               ),
             ),
+            _buildDrawerItem(
+              context,
+              title: 'Guia',
+              icon: Icons.picture_as_pdf,
+              onTap: () async {
+                final pdfPath = await selecionarPDF(context);
+                if (pdfPath != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => TelaVisualizarPDF(caminhoPDF: pdfPath)),
+                    );
+                }
+              }
+              )
           ],
         ),
       ),
@@ -162,3 +203,7 @@ class TelaInicial extends StatelessWidget {
     );
   }
 }
+
+
+
+
